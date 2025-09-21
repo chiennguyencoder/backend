@@ -11,11 +11,11 @@ const options: swaggerJSDoc.Options = {
       description: "test swagger",
     },
   },
-  apis: ["./src/route.ts"], 
+  apis: ["./src/apis/users/*.ts"], 
 };
 
 const swaggerSpec = swaggerJSDoc(options);
 
 export const setupSwagger = (app: Express) => {
-  app.use("/", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+  app.use("/docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 };
