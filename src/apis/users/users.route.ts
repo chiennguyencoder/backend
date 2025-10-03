@@ -80,4 +80,8 @@ route.route('/:id')
  */
 
 route.post('/', UserController.createUser)
+
+//TODO GET /me
+//TODO DELETE /:id
+
 export default route
