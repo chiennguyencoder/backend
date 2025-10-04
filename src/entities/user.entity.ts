@@ -18,7 +18,7 @@ export class User extends DateTimeEntity {
   public password: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  public name: string;
+  public username: string;
 
   @Column({ type: 'text', nullable: true })
   public bio: string;
