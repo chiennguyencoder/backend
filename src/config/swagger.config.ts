@@ -10,8 +10,13 @@ const options: swaggerJSDoc.Options = {
       version: "1.0.0",
       description: "test swagger",
     },
+    servers: [
+      {
+        url: "http://localhost:3000/api",
+      },
+    ],
   },
-  apis: ["./src/apis/users/*.ts"], 
+  apis: ["./src/apis/**/*.ts"], 
 };
 
 const swaggerSpec = swaggerJSDoc(options);
