@@ -5,6 +5,7 @@ import { AuthRequest } from '@/types/auth-request';
 import { NextFunction, Response } from 'express';
 import { errorResponse } from './response';
 import { Status } from '@/types/response';
+import ms from 'ms';
 
 config();
 
@@ -29,7 +30,9 @@ export const generateToken = async ( user_id: string, type: 'access' | 'refresh'
         jwt.sign(payload, secret, options, async (err: Error, token: string) => {
             if (err) return reject(err);
             if (token) {
-                redisClient.set(`${user_id}-${type}`, token, { EX : Number(expiresIn)})
+                const expiresInMs = ms(expiresIn!);
+                const expiresInSeconds = Math.floor(expiresInMs / 1000);
+                redisClient.set(`${user_id}-${type}`, token, { EX : expiresInSeconds })
                 return resolve(token);
             } else {
                 return reject(new Error('Failed to generate token'));
