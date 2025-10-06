@@ -1,8 +1,8 @@
 import 'reflect-metadata'
-import  AppDataSource  from '@/config/db' 
+import  AppDataSource  from '@/config/typeorm.config' 
 import express from "express";
 import { ErrorHandler } from "./middleware/error-handle";
-import { setupSwagger } from "./config/swagger";
+import { setupSwagger } from "./config/swagger.config";
 import  AppRoute from './apis/index'
 
 const app = express();

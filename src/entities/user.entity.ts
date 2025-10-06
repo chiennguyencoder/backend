@@ -11,14 +11,14 @@ export class User extends DateTimeEntity {
   @PrimaryGeneratedColumn('uuid')
   public id: string;
 
-  @Column({ type: 'varchar', unique: true, length: 255 })
+  @Column({ type: 'varchar', unique: true, length: 255, nullable: true })
   public email: string;
 
-  @Column({ type: 'varchar', length: 255 })
+  @Column({ type: 'varchar', length: 255, nullable: true })
   public password: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
-  public name: string;
+  public username: string;
 
   @Column({ type: 'text', nullable: true })
   public bio: string;
