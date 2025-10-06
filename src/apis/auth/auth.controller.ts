@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 import { successResponse } from "@/utils/response";
 import { generateToken, verifyAccessToken, verifyRefreshToken } from "@/utils/jwt";
 import { AuthRequest } from "@/types/auth-request";
+import { LoginInput } from "./auth.validate";
 
 
 const useRepo = AppDataSource.getRepository(User)
