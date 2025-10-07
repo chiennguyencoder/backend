@@ -1,6 +1,6 @@
-import AppDataSource from '@/config/db';
+import AppDataSource from '@/config/typeorm.config';
 import { NextFunction, Response, Request } from 'express';
-import { User } from '@/entity/user.entity';
+import { User } from '@/entities/user.entity';
 import { errorResponse, successResponse } from '@/utils/response';
 import { Status } from '@/types/response';
 

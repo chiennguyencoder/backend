@@ -5,7 +5,7 @@ const route = Router()
 
 /**
  * @swagger
- * /api/users:
+ * /users:
  *   get:
  *     tags:
  *       - Users
@@ -22,7 +22,7 @@ route.route('/')
 
 /**
  * @swagger
- * /api/users/{id}:
+ * /users/{id}:
  *   get:
  *     tags:
  *       - Users
@@ -49,7 +49,7 @@ route.route('/:id')
 
 /**
  * @swagger
- * /api/users:
+ * /users:
  *   post:
  *     summary: Tạo mới user
  *     tags: 
@@ -80,4 +80,8 @@ route.route('/:id')
  */
 
 route.post('/', UserController.createUser)
+
+//TODO GET /me
+//TODO DELETE /:id
+
 export default route
