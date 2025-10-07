@@ -52,7 +52,7 @@ export const verifyAccessToken = async (req: AuthRequest, res: Response, next : 
 
         jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (error: any, payload: any)=> {
             if (error){
-                if (error.name === "TokenExpireError"){
+                if (error.name === "TokenExpiredError"){
                     return next(errorResponse(Status.UNAUTHORIZED, 'Access Token Expired'))
                 }
     
