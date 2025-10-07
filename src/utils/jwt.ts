@@ -5,7 +5,7 @@ import { AuthRequest } from '@/types/auth-request';
 import { NextFunction, Response } from 'express';
 import { errorResponse } from './response';
 import { Status } from '@/types/response';
-import ms from 'ms';
+import ms, { StringValue } from 'ms';
 
 config();
 
@@ -16,7 +16,7 @@ export const generateToken = async ( user_id: string, type: 'access' | 'refresh'
             type === 'access'
                 ? process.env.ACCESS_TOKEN_SECRET
                 : process.env.REFRESH_TOKEN_SECRET;
-        const expiresIn =
+        const expiresIn: string =
             type === 'access'
                 ? process.env.ACCESS_TOKEN_EXPIRES_IN
                 : process.env.REFRESH_TOKEN_EXPIRES_IN;
@@ -30,9 +30,9 @@ export const generateToken = async ( user_id: string, type: 'access' | 'refresh'
         jwt.sign(payload, secret, options, async (err: Error, token: string) => {
             if (err) return reject(err);
             if (token) {
-                const expiresInMs = ms(expiresIn!);
+                const expiresInMs = ms(expiresIn as StringValue);
                 const expiresInSeconds = Math.floor(expiresInMs / 1000);
-                redisClient.set(`${user_id}-${type}`, token, { EX : expiresInSeconds })
+                await redisClient.set(`${user_id}-${type}`, token, { EX : expiresInSeconds })
                 return resolve(token);
             } else {
                 return reject(new Error('Failed to generate token'));
@@ -83,7 +83,7 @@ export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: 
 
         const token = req.cookies.refreshToken;
 
-        jwt.verify(token, process.env.REFRESH_ACCESS_TOKEN, (err: any, payload: any) => {
+        jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err: any, payload: any) => {
             if (err) {
                 if (err.name === 'TokenExpiredError') {
                     return next(errorResponse(Status.UNAUTHORIZED, 'Refresh Token Expired'));
