@@ -16,20 +16,3 @@ route.route('/login')
 route.route('/refresh-token')
     .post(verifyRefreshToken, AuthController.refreshToken)
 export default route
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -6,7 +6,6 @@ import { Status } from '@/types/response';
 
 export const validateHandle = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
   try {
-    console.log({ body: req.body, query: req.query, params: req.params });
     schema.parse(req.body);
     next();
   } catch (err) {
