@@ -1,7 +1,7 @@
 import { Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { DateTimeEntity } from './base/DateTimeEntity';
-import { CardMembers } from './card-nember.entity';
+import { CardMembers } from './card-member.entity';
 import { Comment } from './comment.entity';
 import { List } from './list.entity';
 

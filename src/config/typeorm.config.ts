@@ -5,7 +5,7 @@ import { Board } from '@/entities/board.entity';
 import { Project } from '@/entities/project.entity';
 import { ProjectMembers } from '@/entities/project-member.entity';
 import { Card } from '@/entities/card.entity';
-import { CardMembers } from '@/entities/card-nember.entity';
+import { CardMembers } from '@/entities/card-member.entity';
 import { Comment } from '@/entities/comment.entity';
 import { Notification } from '@/entities/notification.entity';
 import { List } from '@/entities/list.entity';
