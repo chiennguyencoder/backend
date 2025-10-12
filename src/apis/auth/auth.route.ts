@@ -1,4 +1,4 @@
-import { success, z } from 'zod'
+import { z } from 'zod'
 import AuthController from './auth.controller'
 import { Request, Router, Response } from 'express'
 import { verifyRefreshToken } from '@/utils/jwt'
