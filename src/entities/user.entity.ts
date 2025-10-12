@@ -23,7 +23,7 @@ export class User extends DateTimeEntity {
     @Column({ type: 'text', nullable: true })
     public bio: string
 
-    @Column({ type: 'varchar', length: 20, nullable: true })
+    @Column({ type: 'varchar', length: 100, nullable: true })
     public googleID: string
     
     @Column({ type: 'varchar', length: 255, nullable: true })
