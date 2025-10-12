@@ -1,3 +1,8 @@
+import z from 'zod';
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+
+extendZodWithOpenApi(z)
+
 export enum Status {
     // ✅ Request thành công, trả về dữ liệu
     OK = 200,
@@ -66,6 +71,11 @@ export enum Status {
 //     method : 'GET' | 'POST' | 'PUT' | 'DELETE'
 // }
 
+export const StatusEnumSchema = z.nativeEnum(Status).openapi({
+  description: "HTTP status code",
+  examples: [200, 400, 500],
+});
+
 export interface ApiResponse<T> {
     status : Status,
     message : string,
@@ -77,3 +87,10 @@ export interface ApiErrorResponse {
     message : string,
     error? : string
 }
+
+export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) => 
+    z.object({
+        status : StatusEnumSchema,
+        message: z.string(),
+        data: dataSchema.optional()
+    })

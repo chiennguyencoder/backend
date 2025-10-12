@@ -16,6 +16,9 @@ interface ConfigTypes {
     googleClientID: string;
     googleClientSecret: string;
     googleRedirectURI: string;
+    cookieMaxAge: number;
+    sessionSecret: string;
+    corsOrigin: string;
 };
 
 export const Config : ConfigTypes = {
@@ -32,4 +35,7 @@ export const Config : ConfigTypes = {
     googleClientID: process.env.GOOGLE_CLIENT_ID || "",
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
     googleRedirectURI: process.env.GOOGLE_REDIRECT_URI || "",
+    cookieMaxAge: parseInt(process.env.COOKIE_MAX_AGE || "604800000"),
+    sessionSecret: process.env.SESSION_SECRET || "",
+    corsOrigin: process.env.CORS_ORIGIN || "localhost:5173"
 };
