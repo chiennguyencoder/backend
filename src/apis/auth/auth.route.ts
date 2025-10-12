@@ -9,7 +9,6 @@ const route = Router()
 route.route('/register')
     .post(validateHandle(RegisterSchema), AuthController.register)
 
-
 route.route('/login')
     .post(validateHandle(LoginSchema), AuthController.login)
 

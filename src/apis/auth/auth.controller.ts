@@ -8,6 +8,7 @@ import { successResponse } from "@/utils/response";
 import { generateToken, verifyAccessToken, verifyRefreshToken } from "@/utils/jwt";
 import { AuthRequest } from "@/types/auth-request";
 import { LoginInput } from "./auth.validate";
+import { Config } from "@/config/config";
 
 
 const useRepo = AppDataSource.getRepository(User)
@@ -70,6 +71,28 @@ class AuthController {
         }
         catch(err){
             return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
+        }
+    }
+
+    async googleOAuth(req: AuthRequest, res: Response, next: NextFunction){
+        try {
+            const googleUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
+            `?client_id=${Config.googleClientID}` +
+            `&redirect_uri=${Config.googleRedirectURI}` +
+            `&response_type=code` +
+            `&scope=profile email`;
+            return res.redirect(googleUrl);
+        }
+        catch(err){
+            return next(err);
+        }
+    }
+
+    async googleOAuthCallback(req: AuthRequest, res: Response, next: NextFunction){
+        try {
+           
+        }catch(err){
+            return next(err);
         }
     }
 }
