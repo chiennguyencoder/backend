@@ -35,10 +35,6 @@ export class UserRepository {
     async findByIdAsync(id: string): Promise<User | null> {
         return this.repo.findOneBy({ id: id })
     }
-    async updateUserAsync(id: string, updateData: Partial<User>): Promise<User | null> {
-        await this.repo.update(id, updateData)
-        return this.repo.findOneBy({ id })
-    }
     // file by object
     async findUserBy(query: Partial<User>) {
         return this.repo.findOneBy(query)
