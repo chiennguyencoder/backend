@@ -1,5 +1,4 @@
 import z from 'zod';
-import { extend } from 'zod/mini';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 
 extendZodWithOpenApi(z)
