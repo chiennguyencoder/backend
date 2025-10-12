@@ -10,6 +10,8 @@ import passport from 'passport'
 import { Config } from './config/config'
 import session from 'express-session'
 import './config/passport.config'
+import { openAPIRouter } from "@/api-docs/openApiRouter";
+
 
 // Create Express app
 
@@ -44,11 +46,17 @@ AppDataSource.initialize()
     })
 
 // Swagger
-setupSwagger(app)
 
-// Error Handler
+app.use(openAPIRouter)
 
 app.use('/api', AppRoute)
+app.use((req, res, next) => {
+    res.status(404).json({
+        success : false,
+        msg : "NOT FOUND"
+    })
+})
+// Error Handler
 app.use(ErrorHandler)
 
 app.listen(PORT, () => {

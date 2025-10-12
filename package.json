@@ -4,6 +4,7 @@
   "description": "learn backend to create trello app",
   "main": "./src/index.ts",
   "dependencies": {
+    "@asteasolutions/zod-to-openapi": "^8.1.0",
     "@types/swagger-jsdoc": "^6.0.4",
     "axios": "^1.12.2",
     "bcrypt": "^6.0.0",

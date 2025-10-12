@@ -11,7 +11,7 @@ passport.use(
             clientSecret: Config.googleClientSecret,
             callbackURL: Config.googleRedirectURI
         },
-        async (accessToken: string, refreshToken: string, profile: any, done) => {
+        async (refreshToken: string, accessToken: string,profile: any, done: any) => {
             try {
                 const repo = new UserRepository()
                 let user = await repo.findUserBy({ googleID: profile.id })
@@ -24,7 +24,8 @@ passport.use(
                         username: profile.displayName
                     })
 
-                    return done(null, user)
+                    const payload = user
+                    return done(null, payload)
                 }
             } catch (err) {
                 return done(err)
