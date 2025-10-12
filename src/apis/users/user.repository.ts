@@ -28,9 +28,6 @@ export class UserRepository {
     async findByEmailAsync(email: string | undefined): Promise<User | null> {
         return this.repo.findOneBy({ email })
     }
-    async findByIdAsync(id: string): Promise<User | null> {
-        return this.repo.findOneBy({ id: id })
-    }
     // file by object
     async findUserBy(query: Partial<User>) {
         return this.repo.findOneBy(query)
