@@ -40,7 +40,7 @@ export class UserRepository {
         return this.repo.findOneBy({ id })
     }
     // file by object
-    async findUserBy(query: Object) {
+    async findUserBy(query: Partial<User>) {
         return this.repo.findOneBy(query)
     }
 }
