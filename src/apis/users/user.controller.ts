@@ -1,15 +1,14 @@
-import AppDataSource from '@/config/typeorm.config';
 import { NextFunction, Response, Request } from 'express';
-import { User } from '@/entities/user.entity';
 import { errorResponse, successResponse } from '@/utils/response';
 import { Status } from '@/types/response';
+import {UserRepository} from './user.repository';
 
-const userRepo = AppDataSource.getRepository(User)
+const userRepo = new UserRepository();
 
 class UserController {
     async getAll(req : Request, res : Response, next: NextFunction){
         try {
-            const users = await userRepo.find();
+            const users = await userRepo.findAll()
             return res.json(successResponse(Status.OK, 'Users fetched successfully', users))
         }
         catch(err){
@@ -20,7 +19,7 @@ class UserController {
     async getUserByID(req : Request, res : Response, next: NextFunction){
         try {   
             const { id } = req.params
-            const user = await userRepo.findOneBy({id})
+            const user = await userRepo.findById(id)
             if (user){
                  res.json(successResponse(Status.OK, 'User fetched successfully', user));
             }
@@ -35,8 +34,7 @@ class UserController {
     async createUser(req : Request, res : Response, next: NextFunction){
         try {
             const { username, email, password } = req.body
-            const user = userRepo.create({username, email, password})
-            await userRepo.save(user)
+            await userRepo.createUser({ username, email, password})
             return res.json(successResponse(Status.CREATED, 'Create new user successfully!'))
         }
         catch(err){

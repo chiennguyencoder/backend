@@ -9,6 +9,8 @@ import { CardMembers } from '@/entities/card-member.entity';
 import { Comment } from '@/entities/comment.entity';
 import { Notification } from '@/entities/notification.entity';
 import { List } from '@/entities/list.entity';
+import { Role } from '@/entities/role.entity';
+import { Permission } from '@/entities/permission.entity';
 
 config();
 
@@ -19,7 +21,7 @@ export default new DataSource({
   username: process.env.DB_USERNAME,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_DATABASE,
-  entities: [User, Project, ProjectMembers, Board, Card, CardMembers, Comment, Notification, List],
+  entities: [User, Project, ProjectMembers, Board, Card, CardMembers, Comment, Notification, List, Role, Permission],
   migrationsTableName: 'migrations',
   migrations: [],
   synchronize: true,
