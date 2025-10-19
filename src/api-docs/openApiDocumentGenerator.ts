@@ -2,9 +2,9 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-open
 
 import { authRegistry } from '@/apis/auth/auth.route'
 import { userRegistry } from '@/apis/users/users.route'
-import { projectRegister } from '@/apis/project/project.route'
+import { workspaceRegister } from '@/apis/workspace/workspace.route'
 export function generateOpenAPIDocument() {
-    const registry = new OpenAPIRegistry([userRegistry, authRegistry, projectRegister])
+    const registry = new OpenAPIRegistry([userRegistry, authRegistry, workspaceRegister])
 
     registry.registerComponent('securitySchemes', 'bearerAuth', {
         type: 'http',
