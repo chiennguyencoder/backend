@@ -1,46 +1,46 @@
-import ProjectController from './project.controller'
+import WorkspaceController from './workspace.controller'
 import { Router } from 'express'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 import { verifyAccessToken } from '@/utils/jwt'
 import z from 'zod'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
-import { ProjectRegister } from './project.schema'
+import { WorkspaceRegister } from './workspace.schema'
 
 extendZodWithOpenApi(z)
 const router = Router()
-export const projectRegister = new OpenAPIRegistry()
+export const workspaceRegister = new OpenAPIRegistry()
 
 const registerPath = () => {
-    projectRegister.registerPath({
+    workspaceRegister.registerPath({
         method: 'get',
-        path: '/api/project',
-        tags: ['Project'],
+        path: '/api/workspace',
+        tags: ['Workspace'],
         security: [{ bearerAuth: [] }],
 
         responses: {
             200: {
-                description: 'Get all project'
+                description: 'Get all workspace'
             }
         }
     })
 
-    projectRegister.registerPath({
+    workspaceRegister.registerPath({
         method: 'post',
-        path: '/api/project',
-        tags: ['Project'],
+        path: '/api/workspace',
+        tags: ['Workspace'],
         security: [{ bearerAuth: [] }],
-        request: { body: ProjectRegister },
+        request: { body: WorkspaceRegister },
         responses: {
             200: {
-                description: 'Created project'
+                description: 'Created workspace'
             }
         }
     })
 
-    projectRegister.registerPath({
+    workspaceRegister.registerPath({
         method: 'delete',
-        path: '/api/project/{id}',
-        tags: ['Project'],
+        path: '/api/workspace/{id}',
+        tags: ['Workspace'],
         security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
@@ -49,26 +49,26 @@ const registerPath = () => {
         },
         responses: {
             200: {
-                description: 'Delete project'
+                description: 'Delete workspace'
             }
         }
     })
 
-    projectRegister.registerPath({
+    workspaceRegister.registerPath({
         method: 'put',
-        path: '/api/project/{id}',
-        tags: ['Project'],
+        path: '/api/workspace/{id}',
+        tags: ['Workspace'],
         security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
                 id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' })
             }),
-            body: ProjectRegister
+            body: WorkspaceRegister
         },
 
         responses: {
             200: {
-                description: 'update project'
+                description: 'update workspace'
             }
         }
     })
@@ -78,11 +78,11 @@ registerPath()
 
 router
     .route('/')
-    .get(verifyAccessToken, ProjectController.getAllProjects)
-    .post(verifyAccessToken, ProjectController.createProject)
+    .get(verifyAccessToken, WorkspaceController.getAllWorkspaces)
+    .post(verifyAccessToken, WorkspaceController.createWorkspace)
 
 router
     .route('/:id')
-    .delete(verifyAccessToken, ProjectController.deleteProject)
-    .put(verifyAccessToken, ProjectController.updateProject)
+    .delete(verifyAccessToken, WorkspaceController.deleteWorkspace)
+    .put(verifyAccessToken, WorkspaceController.updateWorkspace)
 export default router
