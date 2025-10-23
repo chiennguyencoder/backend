@@ -50,7 +50,14 @@ class AuthController {
 
             const accessToken = await generateToken(user.id, 'access')
             const refreshToken = await generateToken(user.id, 'refresh')
-            return res.json({ message: 'Login successfully!', accessToken, refreshToken })
+
+            res.cookie('refresh', refreshToken, {
+                maxAge: Config.cookieMaxAge,
+                httpOnly: true,
+                secure: false,
+            })
+
+            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
         } catch (err) {
             return next(err)
         }
@@ -78,9 +85,9 @@ class AuthController {
 
             res.cookie('refresh', refreshToken, {
                 maxAge: Config.cookieMaxAge,
-                httpOnly : true,
-                secure : false,
-                path : "/api/auth/refresh-token"
+                httpOnly: true,
+                secure: false,
+                path: '/api/auth/refresh-token'
             })
 
             res.redirect(`${Config.corsOrigin}/oauth2?token=${accessToken}`)
