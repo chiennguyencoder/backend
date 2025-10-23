@@ -9,15 +9,19 @@ import passport from 'passport'
 import { Config } from './config/config'
 import session from 'express-session'
 import './config/passport.config'
-import { openAPIRouter } from "@/api-docs/openApiRouter";
-
+import { openAPIRouter } from '@/api-docs/openApiRouter'
 
 // Create Express app
 
 const app = express()
 const PORT = 3000
 
-app.use(cors())
+app.use(
+    cors({
+        origin: 'http://localhost:5173',
+        credentials: true
+    })
+)
 app.use(express.json())
 app.use(urlencoded({ extended: true }))
 
@@ -33,7 +37,6 @@ app.use(
 
 app.use(passport.initialize())
 app.use(passport.session())
-
 
 // Connect database
 AppDataSource.initialize()
@@ -51,8 +54,8 @@ app.use(openAPIRouter)
 app.use('/api', AppRoute)
 app.use((req, res, next) => {
     res.status(404).json({
-        success : false,
-        msg : "NOT FOUND"
+        success: false,
+        msg: 'NOT FOUND'
     })
 })
 // Error Handler
