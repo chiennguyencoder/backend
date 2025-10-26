@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import AuthController from './auth.controller'
 import { Request, Router, Response } from 'express'
-import { verifyRefreshToken } from '@/utils/jwt'
+import { verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
 import { RegisterSchema, LoginSchema, TokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
@@ -105,6 +105,8 @@ route.get(
     passport.authenticate('google', { failureRedirect: '/' }),
     AuthController.googleOAuthCallback
 )
+
+route.get('/me', verifyAccessToken, AuthController.me)
 
 route.post('/forgot-password', AuthController.forgotPassword)
 route.post('/reset-password', AuthController.resetPassword)

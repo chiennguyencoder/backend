@@ -99,6 +99,23 @@ class AuthController {
         }
     }
 
+    async me(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const user_id = req.payload?.id
+            if (!user_id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+            }
+            const user = await useRepo.findOneBy({ id: user_id })
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+            return res.json(successResponse(Status.OK, 'User fetched successfully', { user }))
+        }
+        catch (err) {
+            return next(err)
+        }
+    }
+
     async forgotPassword(req: Request, res: Response, next: NextFunction) {
         try {
             const { email } = req.body
