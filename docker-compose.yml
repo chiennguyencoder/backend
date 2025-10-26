@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:13-alpine
+    environment:
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_DATABASE}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+    networks:
+      - task-management
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1m30s
+      timeout: 30s
+      retries: 5
+    networks:
+      - task-management
+  backend:
+    build:
+      context: .
+      target: dev
+    image: task-management-be:dev
+    container_name: task-management-be
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    environment:
+        - DB_HOST=postgres
+        - REDIS_HOST=redis
+        - REDIS_URL=redis://redis:6379
+        - REDIS_PORT=6379
+
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - task-management
+volumes:
+  pgdata:
+  redisdata:
+  backend:
+networks:
+  task-management:
+    driver: bridge  
