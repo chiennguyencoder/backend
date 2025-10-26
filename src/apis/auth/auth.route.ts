@@ -1,18 +1,85 @@
-import AuthController from './auth.controller';
-import { Router } from "express";
-import { verifyRefreshToken } from '@/utils/jwt';
-import { validateHandle } from '@/middleware/validate-handle';
-import { RegisterSchema, LoginSchema } from './auth.validate';
+import { z } from 'zod'
+import AuthController from './auth.controller'
+import { Request, Router, Response } from 'express'
+import { verifyRefreshToken } from '@/utils/jwt'
+import { validateHandle } from '@/middleware/validate-handle'
+import { RegisterSchema, LoginSchema, TokenSchema } from './auth.schema'
+import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
+import { PostLogin, PostRegister } from './auth.schema'
+import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
+
+import passport from 'passport'
+import { Status } from '@/types/response'
+export const authRegistry = new OpenAPIRegistry()
 
 const route = Router()
 
-route.route('/register')
-    .post(validateHandle(RegisterSchema), AuthController.register)
+const registerPath = () => {
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/login',
+        tags: ['Auth'],
+        request: { body: PostLogin },
+        responses: createApiResponse(TokenSchema, 'Success')
+    })
 
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/register',
+        tags: ['Auth'],
+        request: { body: PostRegister },
+        responses: createApiResponse(z.null(), 'Success')
+    })
 
-route.route('/login')
-    .post(validateHandle(LoginSchema), AuthController.login)
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/refresh-token',
+        tags: ['Auth'],
+        summary: 'Refresh access token',
+        security: [{ bearerAuth: [] }],
+        responses: {
+            200 : {
+                description: 'Verify refresh token to return access token',
+            }
+        }
+    })
 
-route.route('/refresh-token')
-    .post(verifyRefreshToken, AuthController.refreshToken)
+    authRegistry.registerPath({
+        method: 'get',
+        path: '/api/auth/google',
+        tags: ['Auth'],
+        responses: {
+            302: {
+                description: 'Redirect to Google OAuth'
+            }
+        }
+    })
+    authRegistry.registerPath({
+        method: 'get',
+        path: '/api/auth/google/callback',
+        tags: ['Auth'],
+        responses: {
+            302: {
+                description: 'Redirect after authentication'
+            }
+        }
+    })
+}
+
+registerPath()
+
+route.route('/register').post(validateHandle(RegisterSchema), AuthController.register)
+
+route.route('/login').post(validateHandle(LoginSchema), AuthController.login)
+
+route.route('/refresh-token').post(verifyRefreshToken, AuthController.refreshToken)
+
+route.get('/google', passport.authenticate('google', { scope: ['email', 'profile'] }))
+
+route.get(
+    '/google/callback',
+    passport.authenticate('google', { failureRedirect: '/' }),
+    AuthController.googleOAuthCallback
+)
+
 export default route

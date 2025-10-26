@@ -1,85 +1,56 @@
-import UserController from "./users.controller";
-import { Router } from "express";
+import UserController from './user.controller'
+import { Router } from 'express'
+import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
+import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
+import { z } from 'zod'
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
+import { PostRegister } from '../auth/auth.schema'
+extendZodWithOpenApi(z)
 
 const route = Router()
+export const userRegistry = new OpenAPIRegistry()
 
-/**
- * @swagger
- * /users:
- *   get:
- *     tags:
- *       - Users
- *     summary: Get all users
- *     description: Lấy tất cả users
- *     responses:
- *       200:
- *         description: Lấy dữ liệu user thành công
- *       500:
- *         description: Lỗi server
- */
-route.route('/')
-    .get(UserController.getAll)
+const registerPath = () => {
+    userRegistry.registerPath({
+        method: 'get',
+        path: '/api/users',
+        tags: ['Users'],
+        responses: {
+            200: {
+                description: 'Get all users'
+            }
+        }
+    })
 
-/**
- * @swagger
- * /users/{id}:
- *   get:
- *     tags:
- *       - Users
- *     summary: Get user by ID
- *     description: Retrieve a specific user by their ID
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         description: Unique identifier of the user
- *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Thành công
- *       404:
- *         description: Không tìm thấy
- *       500:
- *         description: Lỗi server
- */
-route.route('/:id')
-    .get(UserController.getUserByID)
+    userRegistry.registerPath({
+        method: 'get',
+        path: '/api/users/{id}',
+        tags: ['Users'],
+        request: {
+            params: z.object({
+                id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' })
+            })
+        },
+        responses: {
+            200: {
+                description: 'Get user by id'
+            }
+        }
+    })
 
+    userRegistry.registerPath({
+        method: 'post',
+        path: '/api/users',
+        tags: ['Users'],
+        request: { body: PostRegister },
+        responses: createApiResponse(z.null(), 'Success')
+    })
+}
 
-/**
- * @swagger
- * /users:
- *   post:
- *     summary: Tạo mới user
- *     tags: 
- *          - Users
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - username
- *               - email
- *               - password
- *             properties:
- *               username:
- *                 type: string
- *                 example: "Nguyen Van A"
- *               email:
- *                 type: string
- *                 example: "a@gmail.com"
- *               password:
- *                  type : string
- *                  example: "Abc@123"
- *     responses:
- *       201:
- *         description: User created
- */
+registerPath()
+route.route('/').get(UserController.getAll).post(UserController.createUser)
 
-route.post('/', UserController.createUser)
+route.route('/:id').get(UserController.getUserByID)
 
 //TODO GET /me
 //TODO DELETE /:id

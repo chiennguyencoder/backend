@@ -16,7 +16,7 @@ export const generateToken = async ( user_id: string, type: 'access' | 'refresh'
             type === 'access'
                 ? process.env.ACCESS_TOKEN_SECRET
                 : process.env.REFRESH_TOKEN_SECRET;
-        const expiresIn: string =
+        const expiresIn =
             type === 'access'
                 ? process.env.ACCESS_TOKEN_EXPIRES_IN
                 : process.env.REFRESH_TOKEN_EXPIRES_IN;
@@ -59,10 +59,10 @@ export const verifyAccessToken = async (req: AuthRequest, res: Response, next : 
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
             }
 
-            req.payload = payload as { user_id : string}
+            req.payload = payload as { id : string}
         })
 
-        const redisToken = await redisClient.get(`${req.payload?.user_id}-access`)
+        const redisToken = await redisClient.get(`${req.payload?.id}-access`)
         if (redisToken !== token){
             return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
         }
@@ -92,10 +92,10 @@ export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: 
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
             }
 
-            req.payload = payload as { user_id: string };
+            req.payload = payload as { id: string };
         });
 
-        const redisToken = await redisClient.get(`${req.payload?.user_id}-refresh`);
+        const redisToken = await redisClient.get(`${req.payload?.id}-refresh`);
         if (redisToken !== token) {
             return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
         }

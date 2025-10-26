@@ -19,6 +19,6 @@
         "emitDecoratorMetadata": true,
         "strictPropertyInitialization": false
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "src"],
     "exclude": ["node_modules", "dist"]
 }
