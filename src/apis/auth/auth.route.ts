@@ -3,9 +3,9 @@ import AuthController from './auth.controller'
 import { Request, Router, Response } from 'express'
 import { verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
-import { RegisterSchema, LoginSchema, TokenSchema } from './auth.schema'
+import { RegisterSchema, LoginSchema, TokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
-import { PostLogin, PostRegister } from './auth.schema'
+import { PostLogin, PostRegister, PostForgotPassword, PostResetPassword } from './auth.schema'
 import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
 
 import passport from 'passport'
@@ -38,8 +38,8 @@ const registerPath = () => {
         summary: 'Refresh access token',
         security: [{ bearerAuth: [] }],
         responses: {
-            200 : {
-                description: 'Verify refresh token to return access token',
+            200: {
+                description: 'Verify refresh token to return access token'
             }
         }
     })
@@ -64,6 +64,30 @@ const registerPath = () => {
             }
         }
     })
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/forgot-password',
+        tags: ['Auth'],
+        request: { body: PostForgotPassword },
+        responses: {
+            200: {
+                description: 'OTP sent to email successfully'
+            }
+        }
+    })
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/reset-password',
+        tags: ['Auth'],
+        request: { body: PostResetPassword },
+        responses: {
+            200: {
+                description: 'Reset password successfully'
+            }
+        }
+    })
 }
 
 registerPath()
@@ -81,5 +105,9 @@ route.get(
     passport.authenticate('google', { failureRedirect: '/' }),
     AuthController.googleOAuthCallback
 )
+
+route.post('/forgot-password', AuthController.forgotPassword)
+
+route.post('/reset-password', AuthController.resetPassword)
 
 export default route
