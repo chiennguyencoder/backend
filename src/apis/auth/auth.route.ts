@@ -107,7 +107,8 @@ route.get(
 )
 
 route.post('/forgot-password', AuthController.forgotPassword)
-
 route.post('/reset-password', AuthController.resetPassword)
+route.post('/send-verify-email', AuthController.sendVerifyEmail)
+route.post('/verify-email', AuthController.verifyEmail)
 
 export default route
