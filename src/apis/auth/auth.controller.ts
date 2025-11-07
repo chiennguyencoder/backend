@@ -40,6 +40,7 @@ class AuthController {
     async login(req: Request, res: Response, next: NextFunction) {
         try {
             const { email, password } = req.body
+
             const user = await useRepo.findOne({ where: { email }, select: { id: true, password: true } })
             if (!user) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Invalid email'))
@@ -52,6 +53,14 @@ class AuthController {
 
             const accessToken = await generateToken(user.id, 'access')
             const refreshToken = await generateToken(user.id, 'refresh')
+
+            res.cookie('refresh', refreshToken, {
+                maxAge: Config.cookieMaxAge,
+                httpOnly: true,
+                secure: false,
+            })
+
+            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
 
             res.cookie('refresh', refreshToken, {
                 maxAge: Config.cookieMaxAge,
@@ -95,6 +104,23 @@ class AuthController {
             res.redirect(`${Config.corsOrigin}/oauth2?token=${accessToken}`)
         } catch (err) {
             res.redirect(`${Config.corsOrigin}/oauth2?token=null`)
+        }
+    }
+
+    async me(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const user_id = req.payload?.id
+            if (!user_id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+            }
+            const user = await useRepo.findOneBy({ id: user_id })
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+            return res.json(successResponse(Status.OK, 'User fetched successfully', { user }))
+        }
+        catch (err) {
+            return next(err)
         }
     }
 
@@ -148,6 +174,58 @@ class AuthController {
         } catch (err) {
             return next(err)
         }
+    }
+
+    async sendVerifyEmail(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const user_id = req.payload?.id
+            if (!user_id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+            }
+            const user = await useRepo.findOneBy({ id: user_id })
+            if (!user) {
+                return next(errorResponse(Status.BAD_REQUEST, 'User does not exist'))
+            }
+            const otp = generateNumericOTP(6)
+            const verifyEmail = `${Config.corsOrigin}/verify-email?email=${user.email}&otp=${otp}`
+            redisClient.setEx(`verify-${user.id}`, 300, otp)
+            const mailOptions = {
+                from: Config.emailUser,
+                to: user.email,
+                subject: 'Verify your email',
+                text: `Your verification link is ${verifyEmail}. This link is valid for 5 minutes.`
+            }
+            await emailTransporter.sendMail(mailOptions)
+            return res.json(successResponse(Status.OK, 'Verification email sent successfully'))
+        } catch (err) {
+            return next(err)
+        }
+    }
+
+    async verifyEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { email, otp } = req.body
+
+            const user = await useRepo.findOneBy({ email })
+            if (!user) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Email does not exist'))
+            }
+            const savedOTP = await redisClient.get(`verify-${user.id}`)
+
+
+            if (!savedOTP || Number(savedOTP) !== Number(otp)) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired OTP'))
+            }
+
+            user.isActive = true
+            await useRepo.save(user)
+            await redisClient.del(`verify-${user.id}`)
+            return res.json(successResponse(Status.OK, 'Email verified successfully'))
+        }catch (err) {
+            
+            return next(err)
+        }
+
     }
 }
 

@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import AuthController from './auth.controller'
 import { Request, Router, Response } from 'express'
-import { verifyRefreshToken } from '@/utils/jwt'
+import { verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
 import { RegisterSchema, LoginSchema, TokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
@@ -106,8 +106,11 @@ route.get(
     AuthController.googleOAuthCallback
 )
 
-route.post('/forgot-password', AuthController.forgotPassword)
+route.get('/me', verifyAccessToken, AuthController.me)
 
+route.post('/forgot-password', AuthController.forgotPassword)
 route.post('/reset-password', AuthController.resetPassword)
+route.post('/send-verify-email', AuthController.sendVerifyEmail)
+route.post('/verify-email', AuthController.verifyEmail)
 
 export default route

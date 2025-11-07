@@ -76,13 +76,13 @@ export const verifyAccessToken = async (req: AuthRequest, res: Response, next : 
 
 export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        if (!req.cookies.refreshToken) {
+        if (!req.cookies.refresh) {
             return next(errorResponse(Status.UNAUTHORIZED, 'Unauthorized'));
         }
 
-        const token = req.cookies.refreshToken;
+        const token = req.cookies.refresh;
 
-        jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, (err: any, payload: any) => {
+        jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err: any, payload: any) => {
             if (err) {
                 if (err.name === 'TokenExpiredError') {
                     return next(errorResponse(Status.UNAUTHORIZED, 'Refresh Token Expired'));
@@ -92,12 +92,15 @@ export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: 
             }
 
             req.payload = payload as { id: string };
-        });
+            const redisToken = await redisClient.get(`${req.payload?.id}-refresh`);
 
-        const redisToken = await redisClient.get(`${req.payload?.id}-refresh`);
-        if (redisToken !== token) {
-            return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
-        }
+            //console.log('Redis Token:', redisToken);
+            //console.log('Provided Token:', token);
+    
+            if (redisToken !== token) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
+            }
+        });
 
         return next();
     } catch (error) {
