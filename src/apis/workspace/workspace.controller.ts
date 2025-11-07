@@ -5,6 +5,7 @@ import { errorResponse, successResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import { WorkspaceRepository } from './workspace.repository'
 import { AuthRequest } from '@/types/auth-request'
+import { create } from 'domain'
 
 const repo = new WorkspaceRepository();
 
@@ -33,8 +34,10 @@ class WorkspaceController {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Authentication required'))
             }
 
-            await repo.createWorkspace(req.body)
-            return res.status(Status.CREATED).json(successResponse(Status.CREATED, 'Created workspace'))
+            const createdWorkspace = await repo.createWorkspace(req.body)
+            await repo.addMemberToWorkspace(createdWorkspace.id, user.id, "workspace_admin")
+
+            return res.status(Status.CREATED).json(successResponse(Status.CREATED, 'Created workspace', createdWorkspace))
         } catch (err) {
             next(err)
         }

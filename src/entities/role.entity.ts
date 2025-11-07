@@ -1,8 +1,9 @@
-import { Column, Entity, JoinTable, ManyToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
 import { DateTimeEntity } from './base/DateTimeEntity';
 import { Permission } from './permission.entity';
 import { User } from './user.entity';
+import { WorkspaceMembers } from './workspace-member.entity';
 
 @Entity('roles')
 export class Role extends DateTimeEntity {
@@ -14,6 +15,8 @@ export class Role extends DateTimeEntity {
   public description: string;
   @ManyToMany(() => User, (user) => user.role)
   public users: User[];
+  @ManyToOne(() => WorkspaceMembers, (workspaceMember) => workspaceMember.role)
+  public workspaceMembers: WorkspaceMembers[];
   @ManyToMany(() => Permission, (permission) => permission.roles)
   @JoinTable()
   public permissions: Permission[];

@@ -15,7 +15,7 @@ export class Workspace extends DateTimeEntity {
   @Column({ type: 'varchar', nullable: true })
   public description: string;
 
-  @OneToMany(() => WorkspaceMembers, (projectMember) => projectMember.user)
+  @OneToMany(() => WorkspaceMembers, (workspaceMember) => workspaceMember.user)
   public workspaceMembers: WorkspaceMembers[];
 
   @OneToMany(() => Board, (board) => board.workspace)
