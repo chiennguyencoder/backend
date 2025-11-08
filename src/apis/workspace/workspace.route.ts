@@ -85,4 +85,5 @@ router
     .route('/:id')
     .delete(verifyAccessToken, WorkspaceController.deleteWorkspace)
     .put(verifyAccessToken, WorkspaceController.updateWorkspace)
+    .get(verifyAccessToken, WorkspaceController.getWorkspaceByID)
 export default router

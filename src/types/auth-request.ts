@@ -5,3 +5,17 @@ export interface AuthRequest extends Request {
         id : string
     }
 }
+
+export interface AuthenticatedRequest extends Request {
+    user : {
+        id : string
+        [key: string]: any
+    },
+    workspacePermissions?: {
+        role :string | null,
+        permissions : string[],
+        isMember : boolean
+    }
+
+}
+

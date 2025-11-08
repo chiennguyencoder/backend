@@ -6,6 +6,7 @@ import { Status } from '@/types/response'
 import { WorkspaceRepository } from './workspace.repository'
 import { AuthRequest } from '@/types/auth-request'
 import { create } from 'domain'
+import { Roles } from '@/enums/roles.enum'
 
 const repo = new WorkspaceRepository();
 
@@ -27,15 +28,42 @@ class WorkspaceController {
         }
     }
 
+    async getWorkspaceByID(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const user = req.payload
+            if (!user) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Authentication required'))
+            }
+            // list workspace info and user with roles
+            const workspace = await repo.findWithMembersById(req.params.id)
+
+            if (!workspace) {
+                return res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'Workspace not found'))
+            }
+            const data = {
+                id: workspace.id,
+                title: workspace.title,
+                description: workspace.description,
+                members: workspace.workspaceMembers.map(wm => ({
+                    id: wm.user.id,
+                    username: wm.user.username,
+                    role: wm.role.name
+                }))
+            }
+            return res.status(Status.OK).json(successResponse(Status.OK, 'Get workspace by ID', data))
+        } catch (err) {
+            next(err)
+        }
+    }
+
     async createWorkspace(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const user = req.payload
             if (!user) {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Authentication required'))
             }
-
             const createdWorkspace = await repo.createWorkspace(req.body)
-            await repo.addMemberToWorkspace(createdWorkspace.id, user.id, "workspace_admin")
+            await repo.assignRoleWorkspace(user.id, createdWorkspace.id, Roles.WORKSPACE_ADMIN)
 
             return res.status(Status.CREATED).json(successResponse(Status.CREATED, 'Created workspace', createdWorkspace))
         } catch (err) {
