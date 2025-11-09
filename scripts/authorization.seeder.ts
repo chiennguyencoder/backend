@@ -38,10 +38,10 @@ export class seedAuthorization {
                     "description" : permData.description
                 });
                 await permissionRepository.save(permission);
-                console.log("✅ Created permission: ", permData.name);
+                console.log("Created permission: ", permData.name);
             }
             else {
-                console.log("ℹ️ Permission already exists: ", permData.name);
+                console.log("Permission already exists: ", permData.name);
             }
             createdPermissions.push(permission);
         }
@@ -78,12 +78,12 @@ export class seedAuthorization {
                     permissions: roleInfo.permissions
                 });
                 await roleRepository.save(role);
-                console.log("✅ Created role: ", roleInfo.name);
+                console.log("Created role: ", roleInfo.name);
             } else {
-                console.log("ℹ️ Role already exists: ", roleInfo.name);
+                console.log("Role already exists: ", roleInfo.name);
             }
         }
 
-        console.log("✅ Authorization seeding completed.");
+        console.log("Authorization seeding completed.");
     }
 }
