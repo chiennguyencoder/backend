@@ -1,7 +1,7 @@
 import { User } from '@/entities/user.entity'
 import AppDataSource from '@/config/typeorm.config'
 
-export class UserRepository {
+class UserRepository {
     private repo = AppDataSource.getRepository(User)
 
     async findAll(): Promise<User[]> {
@@ -33,3 +33,5 @@ export class UserRepository {
         return this.repo.findOneBy(query)
     }
 }
+
+export default new UserRepository();

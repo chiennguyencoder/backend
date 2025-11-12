@@ -45,7 +45,7 @@ class AuthController {
             if (!user) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Invalid email'))
             }
-
+            
             const isPasswordValid = await bcrypt.compare(password, user.password)
             if (!isPasswordValid) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Email or password is incorrect!'))
@@ -76,7 +76,7 @@ class AuthController {
 
     async refreshToken(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const user_id = req.payload?.id
+            const user_id = req.user?.id
             if (!user_id) {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
             }
@@ -109,7 +109,7 @@ class AuthController {
 
     async me(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const user_id = req.payload?.id
+            const user_id = req.user?.id
             if (!user_id) {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
             }
@@ -178,7 +178,7 @@ class AuthController {
 
     async sendVerifyEmail(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const user_id = req.payload?.id
+            const user_id = req.user?.id
             if (!user_id) {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
             }

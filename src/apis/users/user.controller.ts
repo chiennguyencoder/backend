@@ -1,14 +1,12 @@
 import { NextFunction, Response, Request } from 'express';
 import { errorResponse, successResponse } from '@/utils/response';
 import { Status } from '@/types/response';
-import { UserRepository } from './user.repository';
-
-const userRepo = new UserRepository();
+import UserRepository from './user.repository';
 
 class UserController {
     async getAll(req: Request, res: Response, next: NextFunction) {
         try {
-            const users = await userRepo.findAll()
+            const users = await UserRepository.findAll()
             return res.json(successResponse(Status.OK, 'Users fetched successfully', users))
         } catch (err) {
             next(err)
@@ -18,7 +16,7 @@ class UserController {
     async getUserByID(req: Request, res: Response, next: NextFunction) {
         try {
             const { id } = req.params
-            const user = await userRepo.findById(id)
+            const user = await UserRepository.findById(id)
             if (user) {
                 res.json(successResponse(Status.OK, 'User fetched successfully', user));
             } else {
@@ -32,7 +30,7 @@ class UserController {
     async createUser(req: Request, res: Response, next: NextFunction) {
         try {
             const { username, email, password } = req.body
-            await userRepo.createUser({ username, email, password })
+            await UserRepository.createUser({ username, email, password })
             return res.json(successResponse(Status.CREATED, 'Create new user successfully!'))
         } catch (err) {
             next(err)

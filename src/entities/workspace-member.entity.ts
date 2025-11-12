@@ -16,6 +16,8 @@ export class WorkspaceMembers extends DateTimeEntity {
   @ManyToOne(() => User, (user) => user.workspaceMembers)
   public user: User;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.workspaceMembers)
+  @ManyToOne(() => Workspace, (workspace) => workspace.workspaceMembers, {
+      onDelete: 'CASCADE',
+  })
   public workspace: Workspace;
 }

@@ -1,10 +1,13 @@
+import { Permissions } from './../../enums/permissions.enum'
 import WorkspaceController from './workspace.controller'
 import { Router } from 'express'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 import { verifyAccessToken } from '@/utils/jwt'
 import z from 'zod'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
-import { WorkspaceRegister } from './workspace.schema'
+import { WorkspaceRegister, WorkspaceSchema } from './workspace.schema'
+import { validateHandle } from '@/middleware/validate-handle'
+import { authorizePermission, authorizePermissionWorkspace } from '@/middleware/authorization'
 
 extendZodWithOpenApi(z)
 const router = Router()
@@ -78,11 +81,47 @@ registerPath()
 
 router
     .route('/')
-    .get(verifyAccessToken, WorkspaceController.getAllWorkspaces)
-    .post(verifyAccessToken, WorkspaceController.createWorkspace)
+    .get(verifyAccessToken, authorizePermission(Permissions.READ_WORKSPACE), WorkspaceController.getAllWorkspaces)
+    .post(
+        verifyAccessToken,
+        authorizePermission(Permissions.CREATE_WORKSPACE),
+        validateHandle(WorkspaceSchema),
+        WorkspaceController.createWorkspace
+    )
 
 router
     .route('/:id')
-    .delete(verifyAccessToken, WorkspaceController.deleteWorkspace)
-    .put(verifyAccessToken, WorkspaceController.updateWorkspace)
+    .delete(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.DELETE_WORKSPACE),
+        WorkspaceController.deleteWorkspace
+    )
+    .put(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.UPDATE_WORKSPACE),
+        WorkspaceController.updateWorkspace
+    )
+    .get(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.READ_WORKSPACE),
+        WorkspaceController.getWorkspaceByID
+    )
+
+router
+    .route('/:workspaceId/members')
+    .get(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.READ_WORKSPACE_MEMBERS),
+        WorkspaceController.getWorkspaceMembers
+    )
+    .post(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.ADD_MEMBER_TO_WORKSPACE),
+        WorkspaceController.addMemberToWorkspace
+    )
+    .delete(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.REMOVE_MEMBER_FROM_WORKSPACE),
+        WorkspaceController.removeMemberFromWorkspace
+    )
 export default router
