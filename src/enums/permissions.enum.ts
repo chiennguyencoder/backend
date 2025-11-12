@@ -12,5 +12,7 @@ export enum Permissions {
     DELETE_WORKSPACE = 'workspace:delete',
     ADD_MEMBER_TO_WORKSPACE = 'workspace:add_member',
     REMOVE_MEMBER_FROM_WORKSPACE = 'workspace:remove_member',
+    CHANGE_MEMBER_ROLE = 'workspace:change_member_role',
+    READ_WORKSPACE_MEMBERS = 'workspace:read_members',
 
 }

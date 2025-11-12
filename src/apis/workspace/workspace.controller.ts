@@ -100,7 +100,7 @@ class WorkspaceController {
     async addMemberToWorkspace(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const workspaceId: string = req.params.workspaceId
-            const { email  } = req.body
+            const { email } = req.body
 
             const workspace: Workspace | null = await repo.findWithMembersById(workspaceId)
             if (!workspace) {
@@ -112,7 +112,9 @@ class WorkspaceController {
             }
             const isMember = workspace.workspaceMembers.some((wm) => wm.user.id === user.id)
             if (isMember) {
-                return res.status(Status.BAD_REQUEST).json(errorResponse(Status.BAD_REQUEST, 'User is already a member of the workspace'))
+                return res
+                    .status(Status.BAD_REQUEST)
+                    .json(errorResponse(Status.BAD_REQUEST, 'User is already a member of the workspace'))
             }
 
             await repo.assignRoleWorkspace(user.id, workspaceId, Roles.WORKSPACE_MEMBER)
@@ -134,7 +136,7 @@ class WorkspaceController {
             if (!member) {
                 return res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
-            
+
             await repo.removeMemberFromWorkspace(member.id, workspaceId)
             return res.status(Status.OK).json(successResponse(Status.OK, 'Removed member from workspace'))
         } catch (err) {
@@ -152,11 +154,14 @@ class WorkspaceController {
             if (!workspace) {
                 return res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'Workspace not found'))
             }
-            const members = workspace.workspaceMembers.map((wm) => ({
-                id: wm.user.id,
-                username: wm.user.username,
-                role: wm.role.name
-            }))
+
+            const members = workspace.workspaceMembers.map((wm) => {
+                return {
+                    id: wm.user.id,
+                    username: wm.user.username,
+                    role: wm.role.name,
+                }
+            })
             return res.status(Status.OK).json(successResponse(Status.OK, 'Get workspace members', members))
         } catch (err) {
             next(err)

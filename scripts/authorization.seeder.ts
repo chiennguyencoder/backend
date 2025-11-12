@@ -25,7 +25,11 @@ export class seedAuthorization {
             { name: 'workspace:read', description: 'Read workspace information' },
             { name: 'workspace:update', description: 'Update workspace information' },
             { name: 'workspace:delete', description: 'Delete a workspace' },
-            { name: 'workspace:manage', description: 'Full workspace administrators' }
+            { name: 'workspace:manage', description: 'Full workspace administrators' },
+            { name: 'workspace:add_member', description: 'Add a member to a workspace' },
+            { name: 'workspace:remove_member', description: 'Remove a member from a workspace' },
+            { name: 'workspace:change_member_role', description: 'Change a member\'s role in a workspace' },
+            { name: 'workspace:read_members', description: 'Read workspace members' }
         ]
 
         // save permissions
@@ -77,7 +81,8 @@ export class seedAuthorization {
                 permissions: createdPermissions.filter(
                     (perm) =>
                         perm.name === 'workspace:read' ||
-                        perm.name === 'workspace:update'
+                        perm.name === 'workspace:update' ||
+                        perm.name === 'workspace:read_members'
                 )
             },
         ]
@@ -105,10 +110,6 @@ export class seedAuthorization {
                     console.log(' Updated permissions for role: ', roleInfo.name)
                 }
             }
-            console.log(
-                `Saving role: ${roleInfo.name} with permissions:`,
-                roleInfo.permissions.map((p) => ({ id: p.id, name: p.name }))
-            )
         }
 
         console.log('Authorization seeding completed.')
