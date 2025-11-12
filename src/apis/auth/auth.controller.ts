@@ -5,11 +5,12 @@ import { errorResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import bcrypt from 'bcryptjs'
 import jwt from 'jsonwebtoken';
+import redisClient from '@/config/redis.config';
 import { successResponse } from '@/utils/response'
 import { generateEmailToken, generateToken, verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { AuthRequest } from '@/types/auth-request'
 import { Config } from '@/config/config'
-import { sendVerificationEmail } from '@/utils/email';
+import { sendVerificationEmail, sendTokenToResetPassword } from '@/utils/email';
 
 const useRepo = AppDataSource.getRepository(User)
 
@@ -55,6 +56,10 @@ class AuthController {
                 return next(errorResponse(Status.BAD_REQUEST, 'Email or password is incorrect!'))
             }
 
+            if (!user.isActive) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Please verify your email before logging in'))
+            }
+
             const accessToken = await generateToken(user.id, 'access')
             const refreshToken = await generateToken(user.id, 'refresh')
             return res.json({ message: 'Login successfully!', accessToken, refreshToken })
@@ -62,6 +67,63 @@ class AuthController {
             return next(err)
         }
     }
+
+    async forgotPassword(req: Request, res: Response, next: NextFunction){
+        try{
+            const {email} = req.body;
+            const user = await useRepo.findOneBy({ email })
+            if(!user){
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+
+            const resetToken = await generateToken(user.id, 'reset');
+            await sendTokenToResetPassword(email, resetToken);
+
+            return res.json(successResponse(Status.OK, 'Password reset email sent'));
+        }catch(err){
+            return next(err)
+        }
+    }
+
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { token, newPassword } = req.body;
+            if (!token || !newPassword) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Token or newPassword is required'));
+            }
+
+            let payload: any;
+            try {
+                payload = jwt.verify(token, process.env.RESET_PASSWORD_SECRET!);
+            } catch (err: any) {
+                if (err.name === 'TokenExpiredError') {
+                    return next(errorResponse(Status.BAD_REQUEST, 'Reset token expired'));
+                }
+                return next(errorResponse(Status.BAD_REQUEST, 'Invalid reset token'));
+            }
+
+            const user = await useRepo.findOneBy({ id: payload.user_id });
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'));
+            }
+
+            const redisToken = await redisClient.get(`${user.id}-reset`);
+            if (redisToken !== token) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid reset token'));
+            }
+
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+            user.password = hashedPassword;
+            await useRepo.save(user);
+
+            await redisClient.del(`${user.id}-reset`);
+
+            return res.json(successResponse(Status.OK, 'Password reset successfully'));
+        } catch (err) {
+            next(err);
+        }
+    }
+
 
     async refreshToken(req: AuthRequest, res: Response, next: NextFunction) {
         try {

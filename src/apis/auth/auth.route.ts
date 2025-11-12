@@ -3,9 +3,9 @@ import AuthController from './auth.controller'
 import { Request, Router, Response } from 'express'
 import { verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
-import { RegisterSchema, LoginSchema, TokenSchema } from './auth.schema'
+import { RegisterSchema, LoginSchema, TokenSchema, ForgotPasswordSchema, ResetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
-import { PostLogin, PostRegister } from './auth.schema'
+import { PostLogin, PostRegister,PostResetPassword, PostForgotPassword } from './auth.schema'
 import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
 
 import passport from 'passport'
@@ -32,6 +32,18 @@ const registerPath = () => {
     })
 
     authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/forgot-password',
+        tags: ['Auth'],
+        request: { body: PostForgotPassword },
+        responses: {
+            200: {
+                description: 'Password reset email sent successfully'
+            }
+        }
+        });
+
+    authRegistry.registerPath({
         method: 'get',
         path: '/api/auth/verify',
         tags: ['Auth'],
@@ -44,6 +56,18 @@ const registerPath = () => {
             }
         }
     })
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/reset-password',
+        tags: ['Auth'],
+        request: { body: PostResetPassword },
+        responses: {
+            200: {
+                description: 'Password reset successfully'
+            }
+        }
+        });
 
     authRegistry.registerPath({
         method: 'post',
@@ -97,5 +121,10 @@ route.get(
 )
 
 route.get('/verify', AuthController.verifyEmail);
+
+
+route.post('/forgot-password', validateHandle(ForgotPasswordSchema), AuthController.forgotPassword);
+
+route.post('/reset-password', validateHandle(ResetPasswordSchema), AuthController.resetPassword);
 
 export default route

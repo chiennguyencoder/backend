@@ -9,18 +9,18 @@ import ms, { StringValue } from 'ms';
 
 config();
 
-export const generateToken = async ( user_id: string, type: 'access' | 'refresh' = 'access' ): Promise<string> => {
+export const generateToken = async ( user_id: string, type: 'access' | 'refresh' | 'reset' = 'access' ): Promise<string> => {
     return new Promise((resolve, reject) => {
         const payload = { user_id };
         const secret =
-            type === 'access'
-                ? process.env.ACCESS_TOKEN_SECRET
-                : process.env.REFRESH_TOKEN_SECRET;
-        const expiresIn =
-            type === 'access'
-                ? process.env.ACCESS_TOKEN_EXPIRES_IN
-                : process.env.REFRESH_TOKEN_EXPIRES_IN;
+            type === 'access' ? process.env.ACCESS_TOKEN_SECRET :
+            type === 'refresh' ? process.env.REFRESH_TOKEN_SECRET :
+            type === 'reset' ? process.env.RESET_PASSWORD_SECRET : undefined;
 
+        const expiresIn =
+            type === 'access' ? process.env.ACCESS_TOKEN_EXPIRES_IN :
+            type === 'refresh' ? process.env.REFRESH_TOKEN_EXPIRES_IN :
+            type === 'reset' ? process.env.RESET_PASSWORD_EXPIRES_IN : undefined;
         if (!secret || !expiresIn) {
             return reject(new Error('Missing JWT secret or expiration'));
         }

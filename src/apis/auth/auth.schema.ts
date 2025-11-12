@@ -38,3 +38,34 @@ export const PostRegister: ZodRequestBody = {
         }
     }
 }
+
+export const ForgotPasswordSchema = z.object({
+    email: z.string().email('Invalid email address')
+});
+
+export type ForgotPasswordInput = z.infer<typeof ForgotPasswordSchema>;
+
+export const PostForgotPassword: ZodRequestBody = {
+    description: 'Send password reset email',
+    content:{
+        'application/json': {
+            schema: ForgotPasswordSchema
+        }
+    }
+}
+
+export const ResetPasswordSchema = z.object({
+    token: z.string(),
+    newPassword: z.string().min(6, 'Password must be at least 6 characters long')
+});
+
+export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
+
+export const PostResetPassword: ZodRequestBody = {
+    description: 'Reset user password using token',
+    content:{
+        'application/json': {
+            schema: ResetPasswordSchema
+        }
+    }
+}
