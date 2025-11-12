@@ -1,16 +1,12 @@
 import { NextFunction, Request, Response } from 'express'
-import DataSource from '@/config/typeorm.config'
 import { Workspace } from '@/entities/workspace.entity'
 import { errorResponse, successResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import { WorkspaceRepository } from './workspace.repository'
 import { AuthRequest } from '@/types/auth-request'
-import { create } from 'domain'
 import { Roles } from '@/enums/roles.enum'
 import { User } from '@/entities/user.entity'
-import { WorkspaceMembers } from '@/entities/workspace-member.entity'
 import UserRepository from '../users/user.repository'
-import { is } from 'zod/locales'
 
 const repo = new WorkspaceRepository()
 
@@ -170,8 +166,8 @@ class WorkspaceController {
 
     async changeMemberRole(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const { memberId, worksapceId, roleId } = req.body
-            await repo.changeMemberRole(memberId, worksapceId, roleId)
+            const { memberId, workspaceId, roleId } = req.body
+            await repo.changeMemberRole(memberId, workspaceId, roleId)
             return res.status(Status.OK).json(successResponse(Status.OK, 'Changed member role'))
         } catch (err) {
             next(err)

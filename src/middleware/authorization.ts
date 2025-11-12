@@ -40,13 +40,12 @@ export const authorizePermission = (requiredPermissions: string | string[]) => {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
             const userPermissions = await loadUserPermission(user.id as string)
-            if (userPermissions){
-                user.roles = userPermissions.roles
-                user.permissions = userPermissions.uniquePermissions
+            if (!userPermissions){
+                return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
             }
+            user.roles = userPermissions.roles
+            user.permissions = userPermissions.uniquePermissions
 
-            // console.log('User Permissions:', userPermissions)
-            
             const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
             const hasPermission = permissions.every((perm) => userPermissions?.uniquePermissions.includes(perm));
 
