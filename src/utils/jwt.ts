@@ -59,8 +59,8 @@ export const verifyAccessToken = async (req: AuthRequest, res: Response, next : 
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
             }
 
-            req.payload = payload as { id : string}
-            const redisToken = await redisClient.get(`${req.payload?.id}-access`)
+            req.user = payload as { id : string}
+            const redisToken = await redisClient.get(`${req.user?.id}-access`)
             if (redisToken !== token){
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
             }
@@ -91,8 +91,8 @@ export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: 
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
             }
 
-            req.payload = payload as { id: string };
-            const redisToken = await redisClient.get(`${req.payload?.id}-refresh`);
+            req.user = payload as { id: string };
+            const redisToken = await redisClient.get(`${req.user?.id}-refresh`);
 
             //console.log('Redis Token:', redisToken);
             //console.log('Provided Token:', token);

@@ -4,7 +4,10 @@ import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 import { verifyAccessToken } from '@/utils/jwt'
 import z from 'zod'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
-import { WorkspaceRegister } from './workspace.schema'
+import { WorkspaceRegister, WorkspaceSchema } from './workspace.schema'
+import { validateHandle } from '@/middleware/validate-handle'
+import { authorizePermission } from '@/middleware/authorization'
+import { Permissions } from '@/enums/permissions.enum'
 
 extendZodWithOpenApi(z)
 const router = Router()
@@ -78,12 +81,18 @@ registerPath()
 
 router
     .route('/')
-    .get(verifyAccessToken, WorkspaceController.getAllWorkspaces)
-    .post(verifyAccessToken, WorkspaceController.createWorkspace)
+    .get(verifyAccessToken, authorizePermission(Permissions.READ_WORKSPACE), WorkspaceController.getAllWorkspaces)
+    .post(verifyAccessToken, validateHandle(WorkspaceSchema), WorkspaceController.createWorkspace)
 
 router
     .route('/:id')
     .delete(verifyAccessToken, WorkspaceController.deleteWorkspace)
     .put(verifyAccessToken, WorkspaceController.updateWorkspace)
     .get(verifyAccessToken, WorkspaceController.getWorkspaceByID)
+
+router
+    .route('/:workspaceId/members')
+    .get(verifyAccessToken, WorkspaceController.getWorkspaceMembers)
+    .post(verifyAccessToken, WorkspaceController.addMemberToWorkspace)
+    .delete(verifyAccessToken, WorkspaceController.removeMemberFromWorkspace)
 export default router

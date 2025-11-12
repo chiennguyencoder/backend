@@ -17,7 +17,7 @@ import morgan from 'morgan'
 const app = express()
 const PORT = 3000
 
-app.use(morgan('combined')) // Logging middleware
+app.use(morgan('dev')) // Logging middleware
 
 // cors
 app.use(

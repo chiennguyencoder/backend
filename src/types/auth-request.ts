@@ -1,8 +1,9 @@
 import { Request } from "express";
 
 export interface AuthRequest extends Request {
-    payload? : {
+    user? : {
         id : string
+        [key: string]: any
     }
 }
 

@@ -1,23 +1,25 @@
-import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, JoinTable, ManyToMany, ManyToOne, OneToMany, PrimaryGeneratedColumn } from 'typeorm'
 
-import { DateTimeEntity } from './base/DateTimeEntity';
-import { Permission } from './permission.entity';
-import { User } from './user.entity';
-import { WorkspaceMembers } from './workspace-member.entity';
+import { DateTimeEntity } from './base/DateTimeEntity'
+import { Permission } from './permission.entity'
+import { User } from './user.entity'
+import { WorkspaceMembers } from './workspace-member.entity'
 
 @Entity('roles')
 export class Role extends DateTimeEntity {
-  @PrimaryGeneratedColumn('uuid')
-  public id: string;
-  @Column({ type: 'varchar', unique: true, length: 100 })
-  public name: string;
-  @Column({ type: 'text', nullable: true })
-  public description: string;
-  @ManyToMany(() => User, (user) => user.role)
-  public users: User[];
-  @OneToMany(() => WorkspaceMembers, (workspaceMember) => workspaceMember.role)
-  public workspaceMembers: WorkspaceMembers[];
-  @ManyToMany(() => Permission, (permission) => permission.roles)
-  @JoinTable()
-  public permissions: Permission[];
+    @PrimaryGeneratedColumn('uuid')
+    public id: string
+    @Column({ type: 'varchar', unique: true, length: 100 })
+    public name: string
+    @Column({ type: 'text', nullable: true })
+    public description: string
+    @ManyToMany(() => User, (user) => user.role)
+    public users: User[]
+    @OneToMany(() => WorkspaceMembers, (workspaceMember) => workspaceMember.role)
+    public workspaceMembers: WorkspaceMembers[]
+    @ManyToMany(() => Permission, (permission) => permission.roles, {
+        cascade: true
+    })
+    @JoinTable()
+    public permissions: Permission[]
 }
