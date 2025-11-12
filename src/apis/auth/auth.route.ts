@@ -32,6 +32,20 @@ const registerPath = () => {
     })
 
     authRegistry.registerPath({
+        method: 'get',
+        path: '/api/auth/verify',
+        tags: ['Auth'],
+        request: {
+            query: z.object({ token: z.string().describe('Verification token')})
+        },
+        responses: {
+            200 : {
+                description: 'Email verified successfully',
+            }
+        }
+    })
+
+    authRegistry.registerPath({
         method: 'post',
         path: '/api/auth/refresh-token',
         tags: ['Auth'],
@@ -81,5 +95,7 @@ route.get(
     passport.authenticate('google', { failureRedirect: '/' }),
     AuthController.googleOAuthCallback
 )
+
+route.get('/verify', AuthController.verifyEmail);
 
 export default route

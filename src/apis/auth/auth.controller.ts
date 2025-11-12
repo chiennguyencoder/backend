@@ -4,30 +4,37 @@ import { User } from '@/entities/user.entity'
 import { errorResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken';
 import { successResponse } from '@/utils/response'
-import { generateToken, verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
+import { generateEmailToken, generateToken, verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { AuthRequest } from '@/types/auth-request'
 import { Config } from '@/config/config'
+import { sendVerificationEmail } from '@/utils/email';
 
 const useRepo = AppDataSource.getRepository(User)
 
 class AuthController {
     async register(req: Request, res: Response, next: NextFunction) {
         try {
-            const { email, password } = req.body
+            const { email, password, name } = req.body
             const isExistEmail = await useRepo.findOneBy({ email })
             if (isExistEmail) {
                 return next(errorResponse(Status.BAD_REQUEST, 'This email is already used!'))
             }
 
             const hashedPassword = await bcrypt.hash(password, 10)
-            const newUser = useRepo.create({ email, password: hashedPassword })
+            const newUser = useRepo.create({ email, password: hashedPassword, name })
 
             if (!newUser) {
                 return next(errorResponse(Status.INTERNAL_SERVER_ERROR, 'Failed to create user'))
             }
 
             await useRepo.save(newUser)
+
+           
+            const emailToken = generateEmailToken(newUser.id);
+            await sendVerificationEmail(email, emailToken);
+
             return res.status(201).json(successResponse(Status.CREATED, 'Register successfully'))
         } catch (err) {
             return next(err)
@@ -88,6 +95,40 @@ class AuthController {
             res.redirect(`${Config.corsOrigin}/oauth2?token=null`)
         }
     }
+
+    async verifyEmail(req: Request, res: Response, next: NextFunction) {
+    try {
+      const token = req.query.token as string;
+      if(!token){
+        return next(errorResponse(Status.BAD_REQUEST, 'Token is required'));
+      }
+      
+      let payload: any;
+      try{
+        payload = jwt.verify(token, process.env.VERIFY_SECRET!);
+      }catch(err: any){
+        if(err.name === 'TokenExpiredError'){
+            return next(errorResponse(Status.BAD_REQUEST, 'Token expired'));
+        }
+        return next(errorResponse(Status.BAD_REQUEST, 'Invalid token'));
+      }
+
+      const user = await useRepo.findOneBy({ id: payload.id });
+      if(!user){
+        return next(errorResponse(Status.NOT_FOUND, 'User not found'));
+    }
+
+    if(user.isActive){
+        return res.json(successResponse(Status.OK, 'Email already verified'));
+    }
+    user.isActive = true;
+    await useRepo.save(user);
+
+        return res.json(successResponse(Status.OK, 'Email verified successfully'));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default new AuthController()
