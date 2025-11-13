@@ -1,7 +1,7 @@
 import { z } from 'zod'
 import AuthController from './auth.controller'
 import { Request, Router, Response } from 'express'
-import { verifyRefreshToken } from '@/utils/jwt'
+import { verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
 import { RegisterSchema, LoginSchema, TokenSchema, ForgotPasswordSchema, ResetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
@@ -76,8 +76,8 @@ const registerPath = () => {
         summary: 'Refresh access token',
         security: [{ bearerAuth: [] }],
         responses: {
-            200 : {
-                description: 'Verify refresh token to return access token',
+            200: {
+                description: 'Verify refresh token to return access token'
             }
         }
     })
@@ -102,6 +102,30 @@ const registerPath = () => {
             }
         }
     })
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/forgot-password',
+        tags: ['Auth'],
+        request: { body: PostForgotPassword },
+        responses: {
+            200: {
+                description: 'OTP sent to email successfully'
+            }
+        }
+    })
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/reset-password',
+        tags: ['Auth'],
+        request: { body: PostResetPassword },
+        responses: {
+            200: {
+                description: 'Reset password successfully'
+            }
+        }
+    })
 }
 
 registerPath()
@@ -120,11 +144,11 @@ route.get(
     AuthController.googleOAuthCallback
 )
 
-route.get('/verify', AuthController.verifyEmail);
+route.get('/me', verifyAccessToken, AuthController.me)
 
-
-route.post('/forgot-password', validateHandle(ForgotPasswordSchema), AuthController.forgotPassword);
-
-route.post('/reset-password', validateHandle(ResetPasswordSchema), AuthController.resetPassword);
+route.post('/forgot-password', AuthController.forgotPassword)
+route.post('/reset-password', AuthController.resetPassword)
+route.post('/send-verify-email', AuthController.sendVerifyEmail)
+route.post('/verify-email', AuthController.verifyEmail)
 
 export default route

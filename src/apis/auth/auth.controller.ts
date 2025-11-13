@@ -1,3 +1,4 @@
+import redisClient from '@/config/redis.config'
 import { Request, Response, NextFunction } from 'express'
 import AppDataSource from '@/config/typeorm.config'
 import { User } from '@/entities/user.entity'
@@ -46,11 +47,11 @@ class AuthController {
         try {
             const { email, password } = req.body
 
-            const user = await useRepo.findOneBy({ email })
+            const user = await useRepo.findOne({ where: { email }, select: { id: true, password: true } })
             if (!user) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Invalid email'))
             }
-
+            
             const isPasswordValid = await bcrypt.compare(password, user.password)
             if (!isPasswordValid) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Email or password is incorrect!'))
@@ -62,7 +63,22 @@ class AuthController {
 
             const accessToken = await generateToken(user.id, 'access')
             const refreshToken = await generateToken(user.id, 'refresh')
-            return res.json({ message: 'Login successfully!', accessToken, refreshToken })
+
+            res.cookie('refresh', refreshToken, {
+                maxAge: Config.cookieMaxAge,
+                httpOnly: true,
+                secure: false,
+            })
+
+            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
+
+            res.cookie('refresh', refreshToken, {
+                maxAge: Config.cookieMaxAge,
+                httpOnly: true,
+                secure: false,
+            })
+
+            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
         } catch (err) {
             return next(err)
         }
@@ -127,7 +143,7 @@ class AuthController {
 
     async refreshToken(req: AuthRequest, res: Response, next: NextFunction) {
         try {
-            const user_id = req.payload?.id
+            const user_id = req.user?.id
             if (!user_id) {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
             }
@@ -147,9 +163,9 @@ class AuthController {
 
             res.cookie('refresh', refreshToken, {
                 maxAge: Config.cookieMaxAge,
-                httpOnly : true,
-                secure : false,
-                path : "/api/auth/refresh-token"
+                httpOnly: true,
+                secure: false,
+                path: '/api/auth/refresh-token'
             })
 
             res.redirect(`${Config.corsOrigin}/oauth2?token=${accessToken}`)
@@ -158,39 +174,126 @@ class AuthController {
         }
     }
 
-    async verifyEmail(req: Request, res: Response, next: NextFunction) {
-    try {
-      const token = req.query.token as string;
-      if(!token){
-        return next(errorResponse(Status.BAD_REQUEST, 'Token is required'));
-      }
-      
-      let payload: any;
-      try{
-        payload = jwt.verify(token, process.env.VERIFY_SECRET!);
-      }catch(err: any){
-        if(err.name === 'TokenExpiredError'){
-            return next(errorResponse(Status.BAD_REQUEST, 'Token expired'));
+    async me(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const user_id = req.user?.id
+            if (!user_id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+            }
+            const user = await useRepo.findOneBy({ id: user_id })
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+            return res.json(successResponse(Status.OK, 'User fetched successfully', { user }))
         }
-        return next(errorResponse(Status.BAD_REQUEST, 'Invalid token'));
-      }
-
-      const user = await useRepo.findOneBy({ id: payload.id });
-      if(!user){
-        return next(errorResponse(Status.NOT_FOUND, 'User not found'));
+        catch (err) {
+            return next(err)
+        }
     }
 
-    if(user.isActive){
-        return res.json(successResponse(Status.OK, 'Email already verified'));
-    }
-    user.isActive = true;
-    await useRepo.save(user);
+    async forgotPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { email } = req.body
+            const user = await useRepo.findOneBy({ email })
+            if (!user) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Email does not exist'))
+            }
 
-        return res.json(successResponse(Status.OK, 'Email verified successfully'));
-    } catch (err) {
-      next(err);
+            const otp = generateNumericOTP(6)
+            const resetLink = `${Config.corsOrigin}/reset-password?email=${email}&otp=${otp}`
+            redisClient.setEx(`reset-${email}`, 300, otp)
+
+            const mailOptions = {
+                from: Config.emailUser,
+                to: email,
+                subject: 'Reset Password',
+                text: `Your OTP link is ${resetLink}. This link is valid for 5 minutes.`
+            }
+
+mm            await emailTransporter.sendMail(mailOptions)
+
+            return res.json(successResponse(Status.OK, 'Reset password link sent to your email'))
+        } catch (err) {
+            return next(err)
+        }
     }
-  }
+
+    async resetPassword(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { email, otp, newPassword } = req.body
+            const savedOTP = await redisClient.get(`reset-${email}`)
+            if (!savedOTP || Number(savedOTP) !== Number(otp)) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired OTP'))
+            }
+            const user = await useRepo.findOne({
+                where: { email },
+                select: { password: true, id: true, email: true}
+            })
+
+            if (!user) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Email does not exist'))
+            }
+            const hashedPassword = await bcrypt.hash(newPassword, 10)
+            user.password = hashedPassword
+            await useRepo.save(user)
+            await redisClient.del(`reset-${email}`)
+            return res.json(successResponse(Status.OK, 'Password reset successfully'))
+        } catch (err) {
+            return next(err)
+        }
+    }
+
+    async sendVerifyEmail(req: AuthRequest, res: Response, next: NextFunction) {
+        try {
+            const user_id = req.user?.id
+            if (!user_id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+            }
+            const user = await useRepo.findOneBy({ id: user_id })
+            if (!user) {
+                return next(errorResponse(Status.BAD_REQUEST, 'User does not exist'))
+            }
+            const otp = generateNumericOTP(6)
+            const verifyEmail = `${Config.corsOrigin}/verify-email?email=${user.email}&otp=${otp}`
+            redisClient.setEx(`verify-${user.id}`, 300, otp)
+            const mailOptions = {
+                from: Config.emailUser,
+                to: user.email,
+                subject: 'Verify your email',
+                text: `Your verification link is ${verifyEmail}. This link is valid for 5 minutes.`
+            }
+            await emailTransporter.sendMail(mailOptions)
+            return res.json(successResponse(Status.OK, 'Verification email sent successfully'))
+        } catch (err) {
+            return next(err)
+        }
+    }
+
+    async verifyEmail(req: Request, res: Response, next: NextFunction) {
+        try {
+            const { email, otp } = req.body
+
+            const user = await useRepo.findOneBy({ email })
+            if (!user) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Email does not exist'))
+            }
+            const savedOTP = await redisClient.get(`verify-${user.id}`)
+
+
+            if (!savedOTP || Number(savedOTP) !== Number(otp)) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired OTP'))
+            }
+
+            user.isActive = true
+            await useRepo.save(user)
+            await redisClient.del(`verify-${user.id}`)
+            return res.json(successResponse(Status.OK, 'Email verified successfully'))
+        }catch (err) {
+            
+            return next(err)
+        }
+
+    }
 }
 
 export default new AuthController()
