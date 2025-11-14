@@ -5,32 +5,39 @@ import { User } from '@/entities/user.entity'
 import { errorResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken';
 import { successResponse } from '@/utils/response'
 import { generateToken, verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { AuthRequest } from '@/types/auth-request'
 import { Config } from '@/config/config'
 import generateNumericOTP from '@/utils/generateOTP'
 import emailTransporter from '@/config/email.config'
+import {generateEmailToken} from "@/utils/jwt"
+import { sendVerificationEmail } from '@/utils/sendEmail'
 
 const useRepo = AppDataSource.getRepository(User)
 
 class AuthController {
     async register(req: Request, res: Response, next: NextFunction) {
         try {
-            const { email, password } = req.body
+            const { email, password, username } = req.body
             const isExistEmail = await useRepo.findOneBy({ email })
             if (isExistEmail) {
                 return next(errorResponse(Status.BAD_REQUEST, 'This email is already used!'))
             }
 
             const hashedPassword = await bcrypt.hash(password, 10)
-            const newUser = useRepo.create({ email, password: hashedPassword })
+            const newUser = useRepo.create({ email, password: hashedPassword, username})
 
             if (!newUser) {
                 return next(errorResponse(Status.INTERNAL_SERVER_ERROR, 'Failed to create user'))
             }
 
             await useRepo.save(newUser)
+
+            const emailToken = generateEmailToken(newUser.id);
+            await sendVerificationEmail(email, emailToken);
+
             return res.status(201).json(successResponse(Status.CREATED, 'Register successfully'))
         } catch (err) {
             return next(err)
@@ -51,6 +58,10 @@ class AuthController {
                 return next(errorResponse(Status.BAD_REQUEST, 'Email or password is incorrect!'))
             }
 
+             if (!user.isActive) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Please verify your email before logging in'))
+            }
+
             const accessToken = await generateToken(user.id, 'access')
             const refreshToken = await generateToken(user.id, 'refresh')
 
@@ -60,15 +71,18 @@ class AuthController {
                 secure: false,
             })
 
-            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
+            // res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
 
-            res.cookie('refresh', refreshToken, {
-                maxAge: Config.cookieMaxAge,
-                httpOnly: true,
-                secure: false,
-            })
+            // res.cookie('refresh', refreshToken, {
+            //     maxAge: Config.cookieMaxAge,
+            //     httpOnly: true,
+            //     secure: false,
+            // })
 
-            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
+            res.status(200).json(successResponse(Status.OK, 'Login successfully!', { 
+                accessToken,
+                refreshToken
+             }))
         } catch (err) {
             return next(err)
         }
@@ -132,6 +146,10 @@ class AuthController {
                 return next(errorResponse(Status.BAD_REQUEST, 'Email does not exist'))
             }
 
+            const existingOTP = await redisClient.get(`reset-${email}`);
+            if(existingOTP){
+                return next(errorResponse(Status.BAD_REQUEST, 'Already requested a reset link, your OTP will expire in a few minutes'))
+            }
             const otp = generateNumericOTP(6)
             const resetLink = `${Config.corsOrigin}/reset-password?email=${email}&otp=${otp}`
             redisClient.setEx(`reset-${email}`, 300, otp)
@@ -155,9 +173,6 @@ class AuthController {
         try {
             const { email, otp, newPassword } = req.body
             const savedOTP = await redisClient.get(`reset-${email}`)
-            if (!savedOTP || Number(savedOTP) !== Number(otp)) {
-                return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired OTP'))
-            }
             const user = await useRepo.findOne({
                 where: { email },
                 select: { password: true, id: true, email: true}
@@ -165,6 +180,13 @@ class AuthController {
 
             if (!user) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Email does not exist'))
+            }
+            if (!savedOTP || Number(savedOTP) !== Number(otp)) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired OTP'))
+            }
+            const isSamePassword = await bcrypt.compare(newPassword, user.password);
+            if(isSamePassword){
+                return next(errorResponse(Status.BAD_REQUEST, 'Your new password cannot be the same as the old password'));
             }
             const hashedPassword = await bcrypt.hash(newPassword, 10)
             user.password = hashedPassword
@@ -202,6 +224,39 @@ class AuthController {
         }
     }
 
+    async verifyEmailToken(req: Request, res: Response, next: NextFunction) {
+        try {
+        const token = req.query.token as string;
+        if(!token){
+            return next(errorResponse(Status.BAD_REQUEST, 'Token is required'));
+        }
+        
+        let payload: any;
+        try{
+            payload = jwt.verify(token, process.env.VERIFY_SECRET!);
+        }catch(err: any){
+            if(err.name === 'TokenExpiredError'){
+                return next(errorResponse(Status.BAD_REQUEST, 'Token expired'));
+            }
+            return next(errorResponse(Status.BAD_REQUEST, 'Invalid token'));
+        }
+
+        const user = await useRepo.findOneBy({ id: payload.id });
+        if(!user){
+            return next(errorResponse(Status.NOT_FOUND, 'User not found'));
+        }
+
+        if(user.isActive){
+            return res.json(successResponse(Status.OK, 'Email already verified'));
+        }
+        user.isActive = true;
+        await useRepo.save(user);
+
+            return res.json(successResponse(Status.OK, 'Email verified successfully'));
+        } catch (err) {
+        next(err);
+        }
+    }
     async verifyEmail(req: Request, res: Response, next: NextFunction) {
         try {
             const { email, otp } = req.body

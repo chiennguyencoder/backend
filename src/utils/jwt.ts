@@ -107,3 +107,9 @@ export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: 
         return next(error);
     }
 };
+
+export const generateEmailToken = (userId: string): string => {
+    const secret = process.env.VERIFY_SECRET!;
+    const token = jwt.sign({ id: userId }, secret, { expiresIn: '1d' }); 
+    return token;
+};

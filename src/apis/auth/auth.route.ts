@@ -88,6 +88,20 @@ const registerPath = () => {
             }
         }
     })
+
+    authRegistry.registerPath({
+        method: 'get',
+        path: '/api/auth/verify',
+        tags: ['Auth'],
+        request: {
+            query: z.object({ token: z.string().describe('Verification token')})
+        },
+        responses: {
+            200 : {
+                description: 'Email verified successfully',
+            }
+        }
+    })
 }
 
 registerPath()
@@ -108,9 +122,11 @@ route.get(
 
 route.get('/me', verifyAccessToken, AuthController.me)
 
-route.post('/forgot-password', AuthController.forgotPassword)
-route.post('/reset-password', AuthController.resetPassword)
+route.post('/forgot-password',validateHandle(forgotPasswordSchema), AuthController.forgotPassword)
+route.post('/reset-password', validateHandle(resetPasswordSchema),AuthController.resetPassword)
 route.post('/send-verify-email', AuthController.sendVerifyEmail)
 route.post('/verify-email', AuthController.verifyEmail)
 
+
+route.get('/verify', AuthController.verifyEmailToken);
 export default route
