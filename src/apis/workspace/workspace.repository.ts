@@ -48,7 +48,7 @@ export class WorkspaceRepository {
         const workspace: Workspace | null = await this.workspaceRepo.findOne({ where: { id: workspaceId } })
         const role: Role | null = await this.roleRepo.findOne({ where: { name: roleName } })
 
-        console.log(user, workspace, role);
+        console.log(user, workspace, role)
 
         if (!user || !workspace || !role) {
             throw new Error('Invalid user, workspace or role')

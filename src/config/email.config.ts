@@ -1,7 +1,7 @@
-import nodemailer from 'nodemailer';
-import SMTPTransport from 'nodemailer/lib/smtp-transport';
-import { config } from 'dotenv';
-config();
+import nodemailer from 'nodemailer'
+import SMTPTransport from 'nodemailer/lib/smtp-transport'
+import { config } from 'dotenv'
+config()
 const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS } = process.env
 
 export default nodemailer.createTransport({
@@ -12,4 +12,4 @@ export default nodemailer.createTransport({
         user: SMTP_USER,
         pass: SMTP_PASS
     }
-});
+})
