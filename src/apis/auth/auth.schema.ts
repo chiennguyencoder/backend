@@ -32,6 +32,9 @@ export const TokenSchema = z.object({
     refreshToken: z.string(),
     accessToken: z.string()
 })
+export const refreshTokenSchema = z.object({
+     accessToken: z.string()
+})
 
 export const PostLogin: ZodRequestBody = {
     description: 'Login to continue',

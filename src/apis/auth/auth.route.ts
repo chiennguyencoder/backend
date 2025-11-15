@@ -3,7 +3,7 @@ import AuthController from './auth.controller'
 import { Router } from 'express'
 import { verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
-import { RegisterSchema, LoginSchema, TokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
+import { RegisterSchema, LoginSchema, TokenSchema,refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 import { PostLogin, PostRegister, PostForgotPassword, PostResetPassword } from './auth.schema'
 import { Status, ApiResponseSchema } from '@/types/response'
@@ -73,8 +73,9 @@ const registerPath = () => {
         tags: ['Auth'],
         summary: 'Refresh access token using refresh token',
         description: 'Requires refresh token cookie. Returns a new access token.',
+        security: [{ bearerAuth: [], cookieAuth: [] }],
         responses: {
-            ...createApiResponse(TokenSchema, 'Generate access token successfully!', Status.OK),
+            ...createApiResponse(refreshTokenSchema, 'Generate access token successfully!', Status.OK),
             ...createApiResponse(
                 z.object({ message: z.literal('Invalid refresh token') }),
                 'Invalid refresh token',

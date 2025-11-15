@@ -2,6 +2,7 @@ import redisClient from '@/config/redis.config'
 import { Request, Response, NextFunction } from 'express'
 import AppDataSource from '@/config/typeorm.config'
 import { User } from '@/entities/user.entity'
+import { Role } from '@/entities/role.entity'
 import { errorResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import bcrypt from 'bcryptjs'
@@ -28,6 +29,11 @@ class AuthController {
             const hashedPassword = await bcrypt.hash(password, 10)
             const newUser = useRepo.create({ email, password: hashedPassword, username })
 
+            const roleRepo = AppDataSource.getRepository(Role)
+            const userRole = await roleRepo.findOne({ where: { name: 'user' } })
+            if (userRole) {
+                newUser.role = [userRole]
+            }
             if (!newUser) {
                 return next(errorResponse(Status.INTERNAL_SERVER_ERROR, 'Failed to create user'))
             }
@@ -104,38 +110,44 @@ class AuthController {
     }
 
     async refreshToken(req: AuthRequest, res: Response, next: NextFunction) {
-        try {
-            const user_id = req.user?.id
-            if (!user_id) {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
-            }
-
-            const authHeader = req.headers.authorization
-            if (authHeader) {
-                const accessToken = authHeader.split(' ')[1]
-
-                try {
-                    const payload: any = jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!)
-
-                    const redisToken = await redisClient.get(`${user_id}-access`)
-                    if (redisToken === accessToken) {
-                        return next(errorResponse(Status.BAD_REQUEST, 'Access token is still valid'))
-                    }
-                } catch (err: any) {
-                    if (err.name !== 'TokenExpiredError') {
-                        return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
-                    }
-                }
-            }
-
-            const newAccessToken = await generateToken(user_id, 'access')
-            return res.json(
-                successResponse(Status.OK, 'Generate access token successfully!', { accessToken: newAccessToken })
-            )
-        } catch (err) {
+    try {
+        const user_id = req.user?.id
+        if (!user_id) {
             return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
         }
+
+        const authHeader = req.headers.authorization
+        if (!authHeader) {
+            return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
+        }
+
+        const accessToken = authHeader.split(' ')[1]
+        if (!accessToken) {
+            return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
+        }
+
+        try {
+            jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!)
+            const redisToken = await redisClient.get(`${user_id}-access`)
+            if (redisToken === accessToken) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Access token is still valid'))
+            }
+        } catch (err: any) {
+            if (err.name !== 'TokenExpiredError') {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+            }
+        }
+
+        const newAccessToken = await generateToken(user_id, 'access')
+
+        return res.json(
+            successResponse(Status.OK, 'Generate access token successfully!', { accessToken: newAccessToken })
+        )
+    } catch (err) {
+        return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
     }
+}
+
 
     async googleOAuthCallback(req: Request, res: Response, next: NextFunction) {
         try {
