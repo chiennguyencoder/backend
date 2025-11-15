@@ -155,7 +155,7 @@ class WorkspaceController {
                 return {
                     id: wm.user.id,
                     username: wm.user.username,
-                    role: wm.role.name,
+                    role: wm.role.name
                 }
             })
             return res.status(Status.OK).json(successResponse(Status.OK, 'Get workspace members', members))

@@ -28,7 +28,7 @@ export class seedAuthorization {
             { name: 'workspace:manage', description: 'Full workspace administrators' },
             { name: 'workspace:add_member', description: 'Add a member to a workspace' },
             { name: 'workspace:remove_member', description: 'Remove a member from a workspace' },
-            { name: 'workspace:change_member_role', description: 'Change a member\'s role in a workspace' },
+            { name: 'workspace:change_member_role', description: "Change a member's role in a workspace" },
             { name: 'workspace:read_members', description: 'Read workspace members' }
         ]
 
@@ -84,7 +84,7 @@ export class seedAuthorization {
                         perm.name === 'workspace:update' ||
                         perm.name === 'workspace:read_members'
                 )
-            },
+            }
         ]
 
         // save roles

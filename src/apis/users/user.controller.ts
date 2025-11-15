@@ -1,7 +1,7 @@
-import { NextFunction, Response, Request } from 'express';
-import { errorResponse, successResponse } from '@/utils/response';
-import { Status } from '@/types/response';
-import UserRepository from './user.repository';
+import { NextFunction, Response, Request } from 'express'
+import { errorResponse, successResponse } from '@/utils/response'
+import { Status } from '@/types/response'
+import UserRepository from './user.repository'
 
 class UserController {
     async getAll(req: Request, res: Response, next: NextFunction) {
@@ -18,7 +18,7 @@ class UserController {
             const { id } = req.params
             const user = await UserRepository.findById(id)
             if (user) {
-                res.json(successResponse(Status.OK, 'User fetched successfully', user));
+                res.json(successResponse(Status.OK, 'User fetched successfully', user))
             } else {
                 res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'User not found'))
             }

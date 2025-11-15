@@ -36,23 +36,23 @@ export const authorizePermission = (requiredPermissions: string | string[]) => {
     return async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
             const user = req.user
-            if (!user){
+            if (!user) {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
             const userPermissions = await loadUserPermission(user.id as string)
-            if (!userPermissions){
+            if (!userPermissions) {
                 return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
             }
             user.roles = userPermissions.roles
             user.permissions = userPermissions.uniquePermissions
 
-            const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions];
-            const hasPermission = permissions.every((perm) => userPermissions?.uniquePermissions.includes(perm));
+            const permissions = Array.isArray(requiredPermissions) ? requiredPermissions : [requiredPermissions]
+            const hasPermission = permissions.every((perm) => userPermissions?.uniquePermissions.includes(perm))
 
             if (!hasPermission) {
                 return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
             }
-            
+
             next()
         } catch (err) {
             return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
@@ -63,34 +63,33 @@ export const authorizePermission = (requiredPermissions: string | string[]) => {
 export const authorizePermissionWorkspace = (requiredPermission: string | string[]) => {
     return async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
-            const user = req.user;
-            if (!user){
+            const user = req.user
+            if (!user) {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
 
-            const workspaceId = req.params.id;
-            const workspaceMemberRepository = AppDataSource.getRepository(WorkspaceMembers);
+            const workspaceId = req.params.id
+            const workspaceMemberRepository = AppDataSource.getRepository(WorkspaceMembers)
             const membership = await workspaceMemberRepository.findOne({
                 where: {
                     workspace: { id: workspaceId },
                     user: { id: user.id }
                 },
                 relations: ['role', 'role.permissions']
-            });
+            })
             if (!membership) {
                 return next(errorResponse(Status.NOT_FOUND, 'Membership not found'))
             }
 
-            const permissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
-            const hasPermission = permissions.every((perm) => membership.role.permissions.some((p) => p.name === perm));
+            const permissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
+            const hasPermission = permissions.every((perm) => membership.role.permissions.some((p) => p.name === perm))
 
             if (!hasPermission) {
                 return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
             }
 
             next()
-        }
-        catch(err){
+        } catch (err) {
             return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
         }
     }

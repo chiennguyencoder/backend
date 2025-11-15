@@ -1,17 +1,16 @@
 import { z } from 'zod'
 import AuthController from './auth.controller'
-import { Request, Router, Response } from 'express'
+import { Router } from 'express'
 import { verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
 import { RegisterSchema, LoginSchema, TokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 import { PostLogin, PostRegister, PostForgotPassword, PostResetPassword } from './auth.schema'
+import { Status, ApiResponseSchema } from '@/types/response'
 import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
-
 import passport from 'passport'
-import { Status } from '@/types/response'
-export const authRegistry = new OpenAPIRegistry()
 
+export const authRegistry = new OpenAPIRegistry()
 const route = Router()
 
 const registerPath = () => {
@@ -19,49 +18,73 @@ const registerPath = () => {
         method: 'post',
         path: '/api/auth/login',
         tags: ['Auth'],
+        summary: 'User login with email and password',
+        description: 'Returns access and refresh tokens if credentials are correct',
         request: { body: PostLogin },
-        responses: createApiResponse(TokenSchema, 'Success')
+        responses: {
+            ...createApiResponse(TokenSchema, 'Login successfully!', Status.OK),
+            ...createApiResponse(
+                z.object({ message: z.literal('Invalid email') }),
+                'Invalid email',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Email or password is incorrect!') }),
+                'Email or password is incorrect!',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Please verify your email before logging in') }),
+                'Please verify your email before logging in',
+                Status.UNAUTHORIZED
+            )
+        }
     })
 
     authRegistry.registerPath({
         method: 'post',
         path: '/api/auth/register',
         tags: ['Auth'],
+        summary: 'Register a new user',
+        description: 'Creates a new user account and sends a verification email',
         request: { body: PostRegister },
-        responses: createApiResponse(z.null(), 'Success')
+        responses: {
+            ...createApiResponse(
+                z.object({ message: z.literal('Register successfully') }),
+                'Register successfully',
+                Status.CREATED
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('This email is already used!') }),
+                'This email is already used!',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Failed to create user') }),
+                'Failed to create user',
+                Status.INTERNAL_SERVER_ERROR
+            )
+        }
     })
 
     authRegistry.registerPath({
         method: 'post',
         path: '/api/auth/refresh-token',
         tags: ['Auth'],
-        summary: 'Refresh access token',
-        security: [{ bearerAuth: [] }],
+        summary: 'Refresh access token using refresh token',
+        description: 'Requires refresh token cookie. Returns a new access token.',
         responses: {
-            200: {
-                description: 'Verify refresh token to return access token'
-            }
-        }
-    })
-
-    authRegistry.registerPath({
-        method: 'get',
-        path: '/api/auth/google',
-        tags: ['Auth'],
-        responses: {
-            302: {
-                description: 'Redirect to Google OAuth'
-            }
-        }
-    })
-    authRegistry.registerPath({
-        method: 'get',
-        path: '/api/auth/google/callback',
-        tags: ['Auth'],
-        responses: {
-            302: {
-                description: 'Redirect after authentication'
-            }
+            ...createApiResponse(TokenSchema, 'Generate access token successfully!', Status.OK),
+            ...createApiResponse(
+                z.object({ message: z.literal('Invalid refresh token') }),
+                'Invalid refresh token',
+                Status.UNAUTHORIZED
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Access token is still valid') }),
+                'Access token is still valid',
+                Status.BAD_REQUEST
+            )
         }
     })
 
@@ -69,11 +92,27 @@ const registerPath = () => {
         method: 'post',
         path: '/api/auth/forgot-password',
         tags: ['Auth'],
+        summary: 'Request OTP to reset password',
+        description: 'Sends OTP link to user email for password reset',
         request: { body: PostForgotPassword },
         responses: {
-            200: {
-                description: 'OTP sent to email successfully'
-            }
+            ...createApiResponse(
+                z.object({ message: z.literal('Reset password link sent to your email') }),
+                'Reset password link sent to your email',
+                Status.OK
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Email does not exist') }),
+                'Email does not exist',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({
+                    message: z.literal('Already requested a reset link, your OTP will expire in a few minutes')
+                }),
+                'Already requested a reset link, your OTP will expire in a few minutes',
+                Status.BAD_REQUEST
+            )
         }
     })
 
@@ -81,39 +120,132 @@ const registerPath = () => {
         method: 'post',
         path: '/api/auth/reset-password',
         tags: ['Auth'],
+        summary: 'Reset user password using OTP',
+        description: 'Validates OTP and updates the password',
         request: { body: PostResetPassword },
         responses: {
-            200: {
-                description: 'Reset password successfully'
-            }
+            ...createApiResponse(
+                z.object({ message: z.literal('Password reset successfully') }),
+                'Password reset successfully',
+                Status.OK
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Email does not exist') }),
+                'Email does not exist',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Invalid or expired OTP') }),
+                'Invalid or expired OTP',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Your new password cannot be the same as the old password') }),
+                'Your new password cannot be the same as the old password',
+                Status.BAD_REQUEST
+            )
+        }
+    })
+
+    authRegistry.registerPath({
+        method: 'post',
+        path: '/api/auth/send-verify-email',
+        tags: ['Auth'],
+        summary: 'Send email verification link',
+        description: 'Requires Authorization header with Bearer access token',
+        responses: {
+            ...createApiResponse(
+                z.object({ message: z.literal('Verification email sent successfully') }),
+                'Verification email sent successfully',
+                Status.OK
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Access token is required') }),
+                'Access token is required',
+                Status.UNAUTHORIZED
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Invalid access token') }),
+                'Invalid access token',
+                Status.UNAUTHORIZED
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('User does not exist') }),
+                'User does not exist',
+                Status.BAD_REQUEST
+            )
         }
     })
 
     authRegistry.registerPath({
         method: 'get',
-        path: '/api/auth/verify',
+        path: '/api/auth/verify-email',
         tags: ['Auth'],
-        request: {
-            query: z.object({ token: z.string().describe('Verification token')})
-        },
+        summary: 'Verify user email with OTP',
+        description: 'Checks OTP from query params and activates the user account',
         responses: {
-            200 : {
-                description: 'Email verified successfully',
-            }
+            ...createApiResponse(
+                z.object({ message: z.literal('Email verified successfully') }),
+                'Email verified successfully',
+                Status.OK
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Email and OTP are required') }),
+                'Email and OTP are required',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Email does not exist') }),
+                'Email does not exist',
+                Status.BAD_REQUEST
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Invalid or expired OTP') }),
+                'Invalid or expired OTP',
+                Status.BAD_REQUEST
+            )
+        }
+    })
+    authRegistry.registerPath({
+        method: 'get',
+        path: '/api/auth/me',
+        tags: ['Auth'],
+        summary: 'Get current logged-in user info',
+        description: 'Requires Authorization header with Bearer access token',
+        responses: {
+            ...createApiResponse(
+                z.object({
+                    user: z.object({
+                        id: z.string(),
+                        email: z.string(),
+                        username: z.string(),
+                        bio: z.string().nullable(),
+                        avatarUrl: z.string().nullable(),
+                        googleID: z.string().nullable(),
+                        isActive: z.boolean(),
+                        createdAt: z.string(),
+                        updatedAt: z.string()
+                    })
+                }),
+                'User fetched successfully',
+                Status.OK
+            ),
+            ...createApiResponse(
+                z.object({ message: z.literal('Invalid access token') }),
+                'Invalid access token',
+                Status.UNAUTHORIZED
+            ),
+            ...createApiResponse(z.object({ message: z.literal('User not found') }), 'User not found', Status.NOT_FOUND)
         }
     })
 }
-
 registerPath()
 
 route.route('/register').post(validateHandle(RegisterSchema), AuthController.register)
-
 route.route('/login').post(validateHandle(LoginSchema), AuthController.login)
-
 route.route('/refresh-token').post(verifyRefreshToken, AuthController.refreshToken)
 
 route.get('/google', passport.authenticate('google', { scope: ['email', 'profile'] }))
-
 route.get(
     '/google/callback',
     passport.authenticate('google', { failureRedirect: '/' }),
@@ -122,11 +254,9 @@ route.get(
 
 route.get('/me', verifyAccessToken, AuthController.me)
 
-route.post('/forgot-password',validateHandle(forgotPasswordSchema), AuthController.forgotPassword)
-route.post('/reset-password', validateHandle(resetPasswordSchema),AuthController.resetPassword)
+route.post('/forgot-password', validateHandle(forgotPasswordSchema), AuthController.forgotPassword)
+route.post('/reset-password', validateHandle(resetPasswordSchema), AuthController.resetPassword)
 route.post('/send-verify-email', AuthController.sendVerifyEmail)
-route.post('/verify-email', AuthController.verifyEmail)
+route.get('/verify-email', AuthController.verifyEmail)
 
-
-route.get('/verify', AuthController.verifyEmailToken);
 export default route
