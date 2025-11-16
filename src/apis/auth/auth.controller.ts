@@ -41,19 +41,7 @@ class AuthController {
 
             await useRepo.save(newUser)
 
-            const otp = generateNumericOTP(6)
-            const verifyLink = `${Config.baseUrl}/api/auth/verify-email?email=${newUser.email}&otp=${otp}`
-
-            await redisClient.setEx(`verify-${newUser.id}`, 300, otp)
-
-            const mailOptions = {
-                from: Config.emailUser,
-                to: newUser.email,
-                subject: 'Verify your email',
-                text: `Your verification link is ${verifyLink}. This link is valid for 5 minutes.`
-            }
-
-            await emailTransporter.sendMail(mailOptions)
+            await this.sendVerifyEmail({ body: { email } } as Request, res, next)
 
             return res.status(201).json(successResponse(Status.CREATED, 'Register successfully'))
         } catch (err) {
@@ -205,7 +193,7 @@ class AuthController {
                 }
             })
 
-            const {workspaceMembers, ...userData} = user!
+            const { workspaceMembers, ...userData } = user!
 
             if (!user) {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
@@ -294,29 +282,15 @@ class AuthController {
         }
     }
 
-    async sendVerifyEmail(req: AuthRequest, res: Response, next: NextFunction) {
+    async sendVerifyEmail(req: Request, res: Response, next: NextFunction) {
         try {
-            const authHeader = req.headers.authorization
-            if (!authHeader) {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
+            const { email } = req.body
+            if (!email) {
+                return next(errorResponse(Status.BAD_REQUEST, 'Email is required'))
             }
-
-            const token = authHeader.split(' ')[1]
-            if (!token) {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
-            }
-
-            let payload: any
-            try {
-                payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!)
-            } catch (err) {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
-            }
-
-            const user_id = payload.id
-            const user = await useRepo.findOneBy({ id: user_id })
+            const user = await useRepo.findOneBy({ email })
             if (!user) {
-                return next(errorResponse(Status.BAD_REQUEST, 'User does not exist'))
+                return next(errorResponse(Status.BAD_REQUEST, 'User not found'))
             }
             const otp = generateNumericOTP(6)
             const verifyEmail = `${Config.baseUrl}/api/auth/verify-email?email=${user.email}&otp=${otp}`

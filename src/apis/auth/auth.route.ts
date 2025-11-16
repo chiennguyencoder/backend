@@ -3,10 +3,18 @@ import AuthController from './auth.controller'
 import { Router } from 'express'
 import { verifyAccessToken, verifyRefreshToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
-import { RegisterSchema, LoginSchema, TokenSchema,refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schema'
+import {
+    RegisterSchema,
+    LoginSchema,
+    TokenSchema,
+    refreshTokenSchema,
+    forgotPasswordSchema,
+    resetPasswordSchema,
+    sendEmailSchema
+} from './auth.schema'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 import { PostLogin, PostRegister, PostForgotPassword, PostResetPassword } from './auth.schema'
-import { Status, ApiResponseSchema } from '@/types/response'
+import { Status, ApiResponseSchema,  } from '@/types/response'
 import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
 import passport from 'passport'
 
@@ -243,7 +251,7 @@ const registerPath = () => {
 }
 registerPath()
 
-route.route('/register').post(validateHandle(RegisterSchema), AuthController.register)
+route.route('/register').post(validateHandle(RegisterSchema), AuthController.register.bind(AuthController))
 route.route('/login').post(validateHandle(LoginSchema), AuthController.login)
 route.route('/refresh-token').post(verifyRefreshToken, AuthController.refreshToken)
 
@@ -258,7 +266,7 @@ route.get('/me', verifyAccessToken, AuthController.me)
 
 route.post('/forgot-password', validateHandle(forgotPasswordSchema), AuthController.forgotPassword)
 route.post('/reset-password', validateHandle(resetPasswordSchema), AuthController.resetPassword)
-route.post('/send-verify-email', AuthController.sendVerifyEmail)
+route.post('/send-verify-email', validateHandle(sendEmailSchema), AuthController.sendVerifyEmail)
 route.get('/verify-email', AuthController.verifyEmail)
 
 export default route

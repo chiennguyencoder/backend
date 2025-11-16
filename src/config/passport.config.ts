@@ -25,8 +25,7 @@ passport.use(
                             username: profile.displayName,
                             isActive: true
                         })
-                    }
-                    else {
+                    } else {
                         user = existingUser
                         user.googleID = profile.id
                         await UserRepository.updateUser(user.id, user)

@@ -18,7 +18,7 @@ export function generateOpenAPIDocument() {
         type: 'apiKey',
         in: 'cookie',
         name: 'refreshToken'
-    });
+    })
 
     const generator = new OpenApiGeneratorV3(registry.definitions)
 
