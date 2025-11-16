@@ -1,3 +1,4 @@
+import { WorkspaceMembers } from './../../entities/workspace-member.entity'
 import redisClient from '@/config/redis.config'
 import { Request, Response, NextFunction } from 'express'
 import AppDataSource from '@/config/typeorm.config'
@@ -110,44 +111,45 @@ class AuthController {
     }
 
     async refreshToken(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-        const user_id = req.user?.id
-        if (!user_id) {
+        try {
+            const user_id = req.user?.id
+            if (!user_id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
+            }
+
+            const authHeader = req.headers.authorization
+            if (!authHeader) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
+            }
+
+            const accessToken = authHeader.split(' ')[1]
+            if (!accessToken) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
+            }
+
+            try {
+                jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!)
+                const redisToken = await redisClient.get(`${user_id}-access`)
+                console.log('Redis token:', redisToken)
+                console.log('Provided access token:', accessToken)
+                if (redisToken === accessToken) {
+                    return next(errorResponse(Status.BAD_REQUEST, 'Access token is still valid'))
+                }
+            } catch (err: any) {
+                if (err.name !== 'TokenExpiredError') {
+                    return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
+                }
+            }
+
+            const newAccessToken = await generateToken(user_id, 'access')
+
+            return res.json(
+                successResponse(Status.OK, 'Generate access token successfully!', { accessToken: newAccessToken })
+            )
+        } catch (err) {
             return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
         }
-
-        const authHeader = req.headers.authorization
-        if (!authHeader) {
-            return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
-        }
-
-        const accessToken = authHeader.split(' ')[1]
-        if (!accessToken) {
-            return next(errorResponse(Status.UNAUTHORIZED, 'Access token is required'))
-        }
-
-        try {
-            jwt.verify(accessToken, process.env.ACCESS_TOKEN_SECRET!)
-            const redisToken = await redisClient.get(`${user_id}-access`)
-            if (redisToken === accessToken) {
-                return next(errorResponse(Status.BAD_REQUEST, 'Access token is still valid'))
-            }
-        } catch (err: any) {
-            if (err.name !== 'TokenExpiredError') {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
-            }
-        }
-
-        const newAccessToken = await generateToken(user_id, 'access')
-
-        return res.json(
-            successResponse(Status.OK, 'Generate access token successfully!', { accessToken: newAccessToken })
-        )
-    } catch (err) {
-        return next(errorResponse(Status.UNAUTHORIZED, 'Invalid refresh token'))
     }
-}
-
 
     async googleOAuthCallback(req: Request, res: Response, next: NextFunction) {
         try {
@@ -179,14 +181,47 @@ class AuthController {
     async me(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const user_id = req.user?.id
-            if (!user_id) {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
-            }
-            const user = await useRepo.findOneBy({ id: user_id })
+            const user = await useRepo.findOne({
+                where: { id: user_id },
+                relations: ['role', 'workspaceMembers.workspace', 'workspaceMembers.role'],
+                select: {
+                    id: true,
+                    email: true,
+                    username: true,
+                    bio: true,
+                    avatarUrl: true,
+                    isActive: true,
+                    createdAt: true,
+                    updatedAt: true,
+                    workspaceMembers: {
+                        id: true,
+                        workspace: {
+                            id: true,
+                            title: true,
+                            description: true
+                        },
+                        role: { name: true }
+                    }
+                }
+            })
+
+            const {workspaceMembers, ...userData} = user!
+
             if (!user) {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
-            return res.json(successResponse(Status.OK, 'User fetched successfully', { user }))
+            return res.json(
+                successResponse(Status.OK, 'User fetched successfully', {
+                    ...userData,
+                    workspace: user.workspaceMembers.map((wm) => ({
+                        id: wm.workspace.id,
+                        title: wm.workspace.title,
+                        description: wm.workspace.description,
+                        role: wm.role.name,
+                        workspace_url: `/api/workspaces/${wm.workspace.id}`
+                    }))
+                })
+            )
         } catch (err) {
             return next(err)
         }

@@ -13,17 +13,26 @@ passport.use(
         },
         async (accessToken: string, refreshToken: string, profile: any, done: any) => {
             try {
-                console.log('Google profile:', profile)
                 let user = await UserRepository.findUserBy({ googleID: profile.id })
                 const email = profile.emails?.[0]?.value
                 if (!user) {
-                    user = await UserRepository.createUser({
-                        googleID: profile.id,
-                        email,
-                        avatarUrl: profile.photos?.[0]?.value,
-                        username: profile.displayName
-                    })
+                    const existingUser = await UserRepository.findByEmailAsync(email)
+                    if (!existingUser) {
+                        user = await UserRepository.createUser({
+                            googleID: profile.id,
+                            email,
+                            avatarUrl: profile.photos?.[0]?.value,
+                            username: profile.displayName,
+                            isActive: true
+                        })
+                    }
+                    else {
+                        user = existingUser
+                        user.googleID = profile.id
+                        await UserRepository.updateUser(user.id, user)
+                    }
                 }
+
                 const payload = user
                 return done(null, payload)
             } catch (err) {

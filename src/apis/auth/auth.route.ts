@@ -211,6 +211,7 @@ const registerPath = () => {
         method: 'get',
         path: '/api/auth/me',
         tags: ['Auth'],
+        security: [{ bearerAuth: [] }],
         summary: 'Get current logged-in user info',
         description: 'Requires Authorization header with Bearer access token',
         responses: {
