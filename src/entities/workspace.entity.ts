@@ -18,6 +18,6 @@ export class Workspace extends DateTimeEntity {
   @OneToMany(() => WorkspaceMembers, (workspaceMember) => workspaceMember.workspace)
   public workspaceMembers: WorkspaceMembers[];
 
-  @OneToMany(() => Board, (board) => board.workspace)
-  boards: Board[];
+//   @OneToMany(() => Board, (board) => board.workspace)
+//   boards: Board[];
 }
