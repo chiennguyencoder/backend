@@ -8,6 +8,6 @@ const route = Router()
 
 route.use('/users', UserRoute)
 route.use('/auth', AuthRoute)
-route.use('/workspace', WorkspaceRoute)
+route.use('/workspaces', WorkspaceRoute)
 
 export default route
