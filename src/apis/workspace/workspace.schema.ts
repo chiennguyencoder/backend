@@ -4,7 +4,7 @@ import { ZodRequestBody, extendZodWithOpenApi } from '@asteasolutions/zod-to-ope
 extendZodWithOpenApi(z)
 
 export const WorkspaceSchema = z.object({
-    title: z.string().min(1, "Title is required").openapi({ description: 'Workspace name' }),
+    title: z.string().min(1, 'Title is required').openapi({ description: 'Workspace name' }),
     description: z.string().optional().openapi({ description: 'Workspace description' })
 })
 

@@ -32,6 +32,12 @@ export const TokenSchema = z.object({
     refreshToken: z.string(),
     accessToken: z.string()
 })
+export const refreshTokenSchema = z.object({
+    accessToken: z.string()
+})
+export const sendEmailSchema = z.object({
+    email: z.string().email('Invalid email address')
+})
 
 export const PostLogin: ZodRequestBody = {
     description: 'Login to continue',

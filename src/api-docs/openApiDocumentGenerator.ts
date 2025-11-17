@@ -14,6 +14,12 @@ export function generateOpenAPIDocument() {
         in: 'header'
     })
 
+    registry.registerComponent('securitySchemes', 'cookieAuth', {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'refreshToken'
+    })
+
     const generator = new OpenApiGeneratorV3(registry.definitions)
 
     return generator.generateDocument({
