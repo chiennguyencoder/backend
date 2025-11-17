@@ -1,13 +1,12 @@
 import UserRoute from '@/apis/users/users.route'
 import AuthRoute from '@/apis/auth/auth.route'
 import WorkspaceRoute from '@/apis/workspace/workspace.route'
-
 import { Router } from 'express'
 
 const route = Router()
 
 route.use('/users', UserRoute)
 route.use('/auth', AuthRoute)
-route.use('/workspace', WorkspaceRoute)
+route.use('/workspaces', WorkspaceRoute)
 
-export default route
+export default  route

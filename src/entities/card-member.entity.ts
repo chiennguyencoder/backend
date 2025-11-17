@@ -16,6 +16,6 @@ export class CardMembers extends DateTimeEntity {
   @ManyToOne(() => Card, (card) => card.cardMembers)
   card: Card;
 
-  @ManyToOne(() => User, (user) => user.cardMembers)
+  @ManyToOne(() => User, (user) => user.cardMembers, { onDelete: 'CASCADE' })
   user: User;
 }

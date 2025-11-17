@@ -2,7 +2,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColum
 
 import { DateTimeEntity } from './base/DateTimeEntity';
 import { List } from './list.entity';
-import { Workspace } from './workspace.entity';
+import { Project } from './project.entity';
 
 @Entity('boards')
 export class Board extends DateTimeEntity {
@@ -18,9 +18,9 @@ export class Board extends DateTimeEntity {
   @Column({ type: 'varchar', length: 255, nullable: true })
   public coverUrl: string;
 
-  @ManyToOne(() => Workspace, (workspace) => workspace.id, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'workspaceId' })
-  public workspace: Workspace;
+  @ManyToOne(() => Project, (project) => project.id, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'projectId' })
+  public project: Project;
 
   @OneToMany(() => List, (list) => list.board)
   lists: List[];

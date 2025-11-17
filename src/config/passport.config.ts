@@ -17,7 +17,7 @@ passport.use(
                 let user = await repo.findUserBy({ googleID: profile.id })
                 const email = profile.emails?.[0]?.value
                 if (!user) {
-                    user = await repo.createUser({
+                    user = await repo.createUserAsync({
                         googleID: profile.id,
                         email,
                         avatarUrl: profile.photos?.[0]?.value,

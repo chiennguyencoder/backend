@@ -15,6 +15,6 @@ export class Comment extends DateTimeEntity {
   @ManyToOne(() => Card, (card) => card.comments)
   card: Card;
 
-  @ManyToOne(() => User, (user) => user.comments)
+  @ManyToOne(() => User, (user) => user.comments, { onDelete: 'CASCADE' })
   user: User;
 }

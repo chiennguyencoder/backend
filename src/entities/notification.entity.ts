@@ -20,6 +20,6 @@ export class Notification extends DateTimeEntity {
     @Column({ name: 'isRead', type: 'boolean', default: false })
     isRead: boolean
 
-    @ManyToOne(() => User, (user) => user.notifications)
+    @ManyToOne(() => User, (user) => user.notifications, { onDelete: 'CASCADE' })
     user: User
 }

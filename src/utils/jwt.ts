@@ -10,100 +10,102 @@ import ms, { StringValue } from 'ms';
 config();
 
 export const generateToken = async ( user_id: string, type: 'access' | 'refresh' = 'access' ): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const payload = { id : user_id };
-        const secret =
-            type === 'access'
-                ? process.env.ACCESS_TOKEN_SECRET
-                : process.env.REFRESH_TOKEN_SECRET;
-        const expiresIn =
-            type === 'access'
-                ? process.env.ACCESS_TOKEN_EXPIRES_IN
-                : process.env.REFRESH_TOKEN_EXPIRES_IN;
+    return new Promise((resolve, reject) => {
+        const payload = { user_id };
+        const secret =
+            type === 'access'
+                ? process.env.ACCESS_TOKEN_SECRET
+                : process.env.REFRESH_TOKEN_SECRET;
+        const expiresIn =
+            type === 'access'
+                ? process.env.ACCESS_TOKEN_EXPIRES_IN
+                : process.env.REFRESH_TOKEN_EXPIRES_IN;
 
-        if (!secret || !expiresIn) {
-            return reject(new Error('Missing JWT secret or expiration'));
-        }
+        if (!secret || !expiresIn) {
+            return reject(new Error('Missing JWT secret or expiration'));
+        }
 
-        const options: SignOptions = { expiresIn };
+        const options: SignOptions = { expiresIn };
 
-        jwt.sign(payload, secret, options, async (err: Error, token: string) => {
-            if (err) return reject(err);
-            if (token) {
-                const expiresInMs = ms(expiresIn as StringValue);
-                const expiresInSeconds = Math.floor(expiresInMs / 1000);
-                await redisClient.set(`${user_id}-${type}`, token, { EX : expiresInSeconds })
-                return resolve(token);
-            } else {
-                return reject(new Error('Failed to generate token'));
-            }
-        });
-    });
+        jwt.sign(payload, secret, options, async (err: any, token: any) => {
+            if (err) return reject(err);
+            if (token) {
+                const expiresInMs = ms(expiresIn as StringValue);
+                const expiresInSeconds = Math.floor(expiresInMs / 1000);
+                // Key trong Redis là {user_id}-access
+                await redisClient.set(`${user_id}-${type}`, token, { EX : expiresInSeconds })
+                return resolve(token);
+            } else {
+                return reject(new Error('Failed to generate token'));
+            }
+        });
+    });
 }
 
 export const verifyAccessToken = async (req: AuthRequest, res: Response, next : NextFunction) => {
-    try {
-        if (!req.headers['authorization']){
-            return next(errorResponse(Status.UNAUTHORIZED, 'Unauthorized!'))
-        }
+    try {
+        if (!req.headers['authorization']){
+            return next(errorResponse(Status.UNAUTHORIZED, 'Unauthorized!'))
+        }
 
-        const authHeader = req.headers['authorization'];
-        const token = authHeader.split(' ')[1];
+        const authHeader = req.headers['authorization'];
+        const token = authHeader.split(' ')[1];
+        
+        if (!token) {
+            return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
+        }
 
-        jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, async (error: any, payload: any)=> {
-            if (error){
-                if (error.name === "TokenExpiredError"){
-                    return next(errorResponse(Status.UNAUTHORIZED, 'Access Token Expired'))
-                }
-    
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
-            }
+        // Sử dụng `jwt.verify` đồng bộ (synchronous)
+        const payload = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET!) as { user_id: string };
 
-            req.user = payload as { id : string}
-            const redisToken = await redisClient.get(`${req.user?.id}-access`)
-            if (redisToken !== token){
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'))
-            }
-        })
+        // Gán payload vào request
+        req.payload = payload;
 
-        next()
+        // Lấy user_id từ payload
+        const userId = req.payload.user_id;
 
-    }catch(err){
-        next(errorResponse(Status.UNAUTHORIZED, 'Invalid access token'))
-    }
+        // Kiểm tra token trong Redis
+        const redisToken = await redisClient.get(`${userId}-access`);
+    
+        if (redisToken !== token){
+            return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token. Token may have been revoked.'));
+        }
 
+        // Mọi thứ OK, đi tiếp
+        next();
+
+    } catch(err: any) {
+        if (err.name === "TokenExpiredError"){
+            return next(errorResponse(Status.UNAUTHORIZED, 'Access Token Expired'))
+        }
+        // Xóa chữ 'S' bị lỗi ở đây
+        return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Access Token'));
+    }
 }
 
+// 🔽 HÀM ĐÃ SỬA LỖI LOGIC 🔽
 export const verifyRefreshToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
-    try {
-        if (!req.cookies.refresh) {
-            return next(errorResponse(Status.UNAUTHORIZED, 'Unauthorized'));
-        }
+    try {
+        if (!req.cookies.refreshToken) {
+            return next(errorResponse(Status.UNAUTHORIZED, 'Unauthorized'));
+        }
 
-        const token = req.cookies.refresh;
+        const token = req.cookies.refreshToken;
 
-        jwt.verify(token, process.env.REFRESH_TOKEN_SECRET, async (err: any, payload: any) => {
-            if (err) {
-                if (err.name === 'TokenExpiredError') {
-                    return next(errorResponse(Status.UNAUTHORIZED, 'Refresh Token Expired'));
-                }
+        // Sửa lại logic này giống như verifyAccessToken
+        const payload = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET!) as { user_id: string };
+        req.payload = payload;
 
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
-            }
+        const redisToken = await redisClient.get(`${payload.user_id}-refresh`);
+        if (redisToken !== token) {
+            return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
+        }
 
-            req.user = payload as { id: string };
-            const redisToken = await redisClient.get(`${req.user?.id}-refresh`);
-
-            //console.log('Redis Token:', redisToken);
-            //console.log('Provided Token:', token);
-    
-            if (redisToken !== token) {
-                return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
-            }
-        });
-
-        return next();
-    } catch (error) {
-        return next(error);
-    }
+        return next();
+    } catch (error: any) {
+        if (error.name === 'TokenExpiredError') {
+            return next(errorResponse(Status.UNAUTHORIZED, 'Refresh Token Expired'));
+        }
+        return next(errorResponse(Status.UNAUTHORIZED, 'Invalid Refresh Token'));
+    }
 };
