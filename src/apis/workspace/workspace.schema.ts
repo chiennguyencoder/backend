@@ -1,5 +1,5 @@
 import { Workspace } from './../../entities/workspace.entity';
-import { email, z } from 'zod'
+import { z } from 'zod'
 import { ZodRequestBody, extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 
 extendZodWithOpenApi(z)
@@ -11,7 +11,7 @@ export const WorkspaceSchema = z.object({
 
 
 // for request
-export const WorkspaceRegister: ZodRequestBody = {
+export const CreateWorkspaceRequestSchema: ZodRequestBody = {
     description: 'Create new Workspace',
     content: {
         'application/json': {
