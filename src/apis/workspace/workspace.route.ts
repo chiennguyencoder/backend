@@ -2,7 +2,7 @@ import { Permissions } from './../../enums/permissions.enum'
 import WorkspaceController from './workspace.controller'
 import { Router } from 'express'
 import { verifyAccessToken } from '@/utils/jwt'
-import { WorkspaceSchema } from './workspace.schema'
+import { InvitationResponseSchema, WorkspaceSchema } from './workspace.schema'
 import { validateHandle } from '@/middleware/validate-handle'
 import { authorizePermission, authorizePermissionWorkspace } from '@/middleware/authorization'
 import { registerPath } from './workspace.swagger'
@@ -21,6 +21,24 @@ router
         WorkspaceController.createWorkspace
     )
 
+
+router
+    .route('/invitations')
+    .get(
+        verifyAccessToken,
+        WorkspaceController.getAllInvitations
+    )
+
+router 
+    .route('/invitations/:workspaceId')
+    .post(
+        verifyAccessToken,
+        validateHandle(InvitationResponseSchema),
+        WorkspaceController.respondToInvitation
+    )
+
+
+
 router
     .route('/:id')
     .delete(
@@ -30,6 +48,7 @@ router
     )
     .put(
         verifyAccessToken,
+        validateHandle(WorkspaceSchema),
         authorizePermissionWorkspace(Permissions.UPDATE_WORKSPACE),
         WorkspaceController.updateWorkspace
     )
@@ -37,6 +56,21 @@ router
         verifyAccessToken,
         authorizePermissionWorkspace(Permissions.READ_WORKSPACE),
         WorkspaceController.getWorkspaceByID
+    )
+
+router
+    .route('/:workspaceId/archive')
+    .post(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.MANAGE_WORKSPACE_PERMISSIONS),
+        WorkspaceController.archiveWorkspace
+    )
+
+router.route('/:workspaceId/unarchive')
+    .post(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.MANAGE_WORKSPACE_PERMISSIONS),
+        WorkspaceController.reopenWorkspace
     )
 
 router
@@ -48,6 +82,7 @@ router
     )
     .post(
         verifyAccessToken,
+        validateHandle(WorkspaceSchema),
         authorizePermissionWorkspace(Permissions.ADD_MEMBER_TO_WORKSPACE),
         WorkspaceController.addMemberToWorkspace
     )
@@ -56,4 +91,5 @@ router
         authorizePermissionWorkspace(Permissions.REMOVE_MEMBER_FROM_WORKSPACE),
         WorkspaceController.removeMemberFromWorkspace
     )
+
 export default router

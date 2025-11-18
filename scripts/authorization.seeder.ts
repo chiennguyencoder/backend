@@ -67,7 +67,7 @@ export class seedAuthorization {
                         perm.name === 'user:read' ||
                         perm.name === 'user:update' ||
                         perm.name === 'workspace:read' ||
-                        perm.name === 'workspace:update'
+                        perm.name === 'workspace:create'
                 )
             },
             {

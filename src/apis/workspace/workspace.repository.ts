@@ -25,8 +25,13 @@ export class WorkspaceRepository {
         })
     }
 
-    async createWorkspace(data: Partial<Workspace>): Promise<Workspace> {
+    async createWorkspace(data: Partial<Workspace>, ownerId: string): Promise<Workspace> {
         const workspace = this.workspaceRepo.create(data)
+        const owner = await this.userRepo.findOne({ where: { id: ownerId } })
+        if (!owner) {
+            throw new Error('Owner not found')
+        }
+        workspace.owner = owner
         return this.workspaceRepo.save(workspace)
     }
 
@@ -39,16 +44,22 @@ export class WorkspaceRepository {
         await this.workspaceRepo.delete(id)
     }
 
+    async archiveWorkspace(id: string): Promise<void> {
+        await this.workspaceRepo.update(id, { isArchived: true })
+    }
+
+    async reopenWorkspace(id: string): Promise<void> {
+        await this.workspaceRepo.update(id, { isArchived: false })
+    }
+
     async findWorkspaceBy(query: Partial<Workspace>) {
         return this.workspaceRepo.findOneBy(query)
     }
 
-    async assignRoleWorkspace(userId: string, workspaceId: string, roleName: string): Promise<void> {
+    async addMemberToWorkspace(userId: string, workspaceId: string, roleName: string): Promise<void> {
         const user: User | null = await this.userRepo.findOne({ where: { id: userId } })
         const workspace: Workspace | null = await this.workspaceRepo.findOne({ where: { id: workspaceId } })
         const role: Role | null = await this.roleRepo.findOne({ where: { name: roleName } })
-
-        console.log(user, workspace, role)
 
         if (!user || !workspace || !role) {
             throw new Error('Invalid user, workspace or role')
@@ -57,7 +68,8 @@ export class WorkspaceRepository {
         const workspaceMember = this.workspaceMemberRepo.create({
             user: user!,
             workspace: workspace!,
-            role: role!
+            role: role!,
+            status: 'pending'
         })
         await this.workspaceMemberRepo.save(workspaceMember)
     }
@@ -70,6 +82,21 @@ export class WorkspaceRepository {
         await this.workspaceMemberRepo.update(
             { user: { id: memberId }, workspace: { id: workspaceId } },
             { role: { id: roleId } }
+        )
+    }
+
+    async findAllInvitationsForUser(userId: string): Promise<WorkspaceMembers[]> {
+        const result = await this.workspaceMemberRepo.find({
+            where: { user: { id: userId }, status: 'pending' },
+            relations: ['workspace', 'role', 'user']
+        })
+        return result
+    }
+
+    async updateInvitationStatus(invitation: WorkspaceMembers): Promise<void> {
+        await this.workspaceMemberRepo.update(
+            { user: { id: invitation.user.id }, workspace: { id: invitation.workspace.id } },
+            { status: invitation.status }
         )
     }
 }

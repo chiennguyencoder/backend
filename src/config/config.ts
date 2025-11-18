@@ -20,6 +20,7 @@ interface ConfigTypes {
     sessionSecret: string
     corsOrigin: string
     baseUrl: string
+    NODE_ENV: 'development' | 'production'
 }
 
 export const Config: ConfigTypes = {
@@ -39,5 +40,6 @@ export const Config: ConfigTypes = {
     cookieMaxAge: parseInt(process.env.COOKIE_MAX_AGE || '604800000'),
     sessionSecret: process.env.SESSION_SECRET || '',
     corsOrigin: process.env.CORS_ORIGIN || 'localhost:5173',
-    baseUrl: process.env.BASE_URL || 'localhost:3000'
+    baseUrl: process.env.BASE_URL || 'localhost:3000',
+    NODE_ENV: process.env.NODE_ENV as 'development' | 'production' || 'development'
 }

@@ -11,7 +11,7 @@ export function successResponse<T>(status: Status = Status.OK, message: string, 
 export function errorResponse(
     status: Status = Status.INTERNAL_SERVER_ERROR,
     message: string,
-    error?: string
+    error?: any
 ): ApiErrorResponse {
     return {
         status,

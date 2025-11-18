@@ -10,6 +10,9 @@ export class WorkspaceMembers extends DateTimeEntity {
     @PrimaryGeneratedColumn('uuid')
     public id: string
 
+    @Column({ type: 'enum', enum: ['accepted', 'rejected', 'pending'], default: 'pending' })
+    public status: 'accepted' | 'rejected' | 'pending'
+
     @ManyToOne(() => Role, (role) => role.workspaceMembers)
     public role: Role
 
