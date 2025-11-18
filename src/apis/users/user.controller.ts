@@ -1,10 +1,12 @@
+import { upload } from './../../middleware/upload';
 import { NextFunction, Response, Request } from 'express'
 import { errorResponse, successResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import UserRepository from './user.repository'
+import { AuthRequest } from '@/types/auth-request';
 
 class UserController {
-    async getAll(req: Request, res: Response, next: NextFunction) {
+    getAll = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const users = await UserRepository.findAll()
             return res.json(successResponse(Status.OK, 'Users fetched successfully', users))
@@ -13,7 +15,7 @@ class UserController {
         }
     }
 
-    async getUserByID(req: Request, res: Response, next: NextFunction) {
+    getUserByID = async (req: Request, res: Response, next: NextFunction) =>    {
         try {
             const { id } = req.params
             const user = await UserRepository.findById(id)
@@ -27,7 +29,7 @@ class UserController {
         }
     }
 
-    async createUser(req: Request, res: Response, next: NextFunction) {
+    createUser = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { username, email, password } = req.body
             await UserRepository.createUser({ username, email, password })
@@ -36,6 +38,21 @@ class UserController {
             next(err)
         }
     }
+
+    // uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction) => {
+    //     try {
+    //         if (!(req.file as any)) {
+    //             return res.status(Status.BAD_REQUEST).json(errorResponse(Status.BAD_REQUEST, 'No file uploaded'))
+    //         }
+    //         const userId = req.user?.id as string
+    //         const avatarUrl = await UserRepository.uploadAvatar(userId, req.file as Express.Multer.File)
+    //         return res.json(successResponse(Status.OK, 'Avatar uploaded successfully', { avatarUrl }))
+            
+    //     } catch (err) {
+    //         next(err)
+    //     }
+    // }
+
 }
 
 export default new UserController()

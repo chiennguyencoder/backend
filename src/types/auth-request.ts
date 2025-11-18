@@ -1,4 +1,6 @@
 import { Request } from 'express'
+import type {} from 'multer'
+
 
 export interface AuthRequest extends Request {
     user?: {
