@@ -38,7 +38,6 @@ class UserRepository {
     async findByEmailAsync(email: string | undefined): Promise<User | null> {
         return this.repo.findOneBy({ email })
     }
-    // file by object
     async findUserBy(query: Partial<User>) {
         return this.repo.findOne({ where: query, relations: ['role'] })
     }

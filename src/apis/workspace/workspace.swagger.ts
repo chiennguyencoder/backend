@@ -16,6 +16,7 @@ export const registerPath = () => {
         method: 'get',
         path: '/api/workspaces',
         tags: ['Workspace'],
+        summary: 'Get all workspaces',
         security: [{ bearerAuth: [], cookieAuth: [] }],
         responses: {
             200: {
@@ -28,6 +29,7 @@ export const registerPath = () => {
         method: 'post',
         path: '/api/workspaces',
         tags: ['Workspace'],
+        summary: 'Create a new workspace',
         security: [{ bearerAuth: [], cookieAuth: [] }],
         request: { body: CreateWorkspaceRequestSchema },
         responses: {
@@ -41,6 +43,7 @@ export const registerPath = () => {
         method: 'delete',
         path: '/api/workspaces/{id}',
         tags: ['Workspace'],
+        summary: 'Delete workspace',
         security: [{ bearerAuth: [], cookieAuth: [] }],
         request: {
             params: z.object({

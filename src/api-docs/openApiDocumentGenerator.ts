@@ -1,8 +1,8 @@
 import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
 
 import { authRegistry } from '@/apis/auth/auth.route'
-import { userRegistry } from '@/apis/users/users.route'
-import { workspaceRegister } from '@/apis/workspace/workspace.route'
+import { userRegistry } from '@/apis/users/users.swagger'
+import { workspaceRegister } from '@/apis/workspace/workspace.swagger'
 export function generateOpenAPIDocument() {
     const registry = new OpenAPIRegistry([userRegistry, authRegistry, workspaceRegister])
 
