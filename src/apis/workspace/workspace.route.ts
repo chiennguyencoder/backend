@@ -91,5 +91,12 @@ router
         authorizePermissionWorkspace(Permissions.REMOVE_MEMBER_FROM_WORKSPACE),
         WorkspaceController.removeMemberFromWorkspace
     )
+router
+    .route('/:workspaceId/members/:memberId/role')
+    .put(
+        verifyAccessToken,
+        authorizePermissionWorkspace(Permissions.MANAGE_WORKSPACE_PERMISSIONS),
+        WorkspaceController.changeMemberRole
+    )
 
 export default router
