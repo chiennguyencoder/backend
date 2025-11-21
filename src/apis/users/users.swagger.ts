@@ -45,25 +45,4 @@ export const usersRegisterPath = () => {
         request: { body: PostRegister },
         responses: createApiResponse(z.null(), 'Success')
     })
-
-    userRegistry.registerPath({
-        method: 'post',
-        path: '/api/users/avatar',
-        tags: ['Users'],
-        summary: 'Upload user avatar',
-        security: [{ bearerAuth: [] }],
-        request: {
-            body: {
-                description: 'Avatar image file',
-                content: {
-                    'multipart/form-data': {  
-                        schema: z.object({
-                            avatar: z.any().openapi({ type: 'string', format: 'binary', description: 'The avatar image file to upload' })
-                        })
-                    }
-                }
-            }
-        },
-        responses: createApiResponse(z.null(), 'Avatar uploaded successfully')
-    })
 }

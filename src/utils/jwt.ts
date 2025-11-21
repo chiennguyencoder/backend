@@ -36,7 +36,6 @@ export const generateToken = async (user_id: string, type: 'access' | 'refresh' 
 
 export const verifyAccessToken = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-        console.log(req.headers)
         if (!req.headers['authorization']) {
             return next(errorResponse(Status.UNAUTHORIZED, 'Unauthorized!'))
         }
