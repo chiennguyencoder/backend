@@ -303,45 +303,4 @@ export const registerPath = () => {
             ...createApiResponse(z.object({ message: z.literal('Workspace not found') }), 'Workspace not found', Status.NOT_FOUND)
         }
     })
-
-    // PUT /api/workspaces/{workspaceId}/members/{memberId}/role - Change member role
-    workspaceRegister.registerPath({
-        method: 'put',
-        path: '/api/workspaces/{workspaceId}/members/{memberId}/role',
-        tags: ['Workspace'],
-        summary: 'Change workspace member role',
-        security: [{ bearerAuth: [] }],
-        request: {
-            params: z.object({
-                workspaceId: z.string().uuid().openapi({ 
-                    example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17',
-                    description: 'Workspace ID'
-                }),
-                memberId: z.string().uuid().openapi({ 
-                    example: 'aa3b10e2-df5e-4974-8a5c-df541cdc2a34',
-                    description: 'Member User ID'
-                })
-            }),
-            body: {
-                description: 'Change member role request body',
-                content: {
-                    'application/json': {
-                        schema: z.object({
-                            role: z.enum(['workspace_admin', 'workspace_member']).openapi({ 
-                                description: 'New role for the member',
-                                example: 'workspace_member'
-                            })
-                        })
-                    }
-                }
-            }
-        },  
-        responses: {
-            ...createApiResponse(z.null(), 'Changed member role successfully', Status.OK),
-            ...createApiResponse(z.object({ message: z.literal('Authentication required') }), 'Authentication required', Status.UNAUTHORIZED),
-            ...createApiResponse(z.object({ message: z.literal('Permission denied') }), 'Permission denied', Status.FORBIDDEN),
-            ...createApiResponse(z.object({ message: z.literal('Workspace not found') }), 'Workspace not found', Status.NOT_FOUND),
-            ...createApiResponse(z.object({ message: z.literal('Member not found in workspace') }), 'Member not found', Status.NOT_FOUND)
-        }
-    })
 }
