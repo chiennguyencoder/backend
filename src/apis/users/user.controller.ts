@@ -39,19 +39,21 @@ class UserController {
         }
     }
 
-    // uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction) => {
-    //     try {
-    //         if (!(req.file as any)) {
-    //             return res.status(Status.BAD_REQUEST).json(errorResponse(Status.BAD_REQUEST, 'No file uploaded'))
-    //         }
-    //         const userId = req.user?.id as string
-    //         const avatarUrl = await UserRepository.uploadAvatar(userId, req.file as Express.Multer.File)
-    //         return res.json(successResponse(Status.OK, 'Avatar uploaded successfully', { avatarUrl }))
+    uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const file = req.file;
+            if (!file) {
+                return res.status(Status.BAD_REQUEST).json(errorResponse(Status.BAD_REQUEST, 'No file uploaded'))
+            }
+
             
-    //     } catch (err) {
-    //         next(err)
-    //     }
-    // }
+            await UserRepository.updateAvatar(req.user?.id as string, file.path);
+
+            return res.json(successResponse(Status.OK, 'Avatar uploaded successfully'))   
+
+        }   
+        catch(err){}
+    }
 
 }
 
