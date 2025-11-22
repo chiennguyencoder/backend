@@ -16,7 +16,10 @@ export class Board extends DateTimeEntity {
     public description: string
 
     @Column({ type: 'varchar', length: 255, nullable: true })
-    public coverUrl: string
+    public backgroundUrl: string
+
+    @Column({ type: "varchar", length: 20, default: 'public' })
+    public permissionLevel: 'private' | 'workspace' | 'public'
 
     @ManyToOne(() => Workspace, (workspace) => workspace.id, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'workspaceId' })

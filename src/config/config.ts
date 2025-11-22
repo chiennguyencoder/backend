@@ -21,6 +21,9 @@ interface ConfigTypes {
     corsOrigin: string
     baseUrl: string
     NODE_ENV: 'development' | 'production'
+    cloundinaryName: string
+    cloudinaryApiKey: string
+    cloudinaryApiSecret: string
 }
 
 export const Config: ConfigTypes = {
@@ -41,5 +44,8 @@ export const Config: ConfigTypes = {
     sessionSecret: process.env.SESSION_SECRET || '',
     corsOrigin: process.env.CORS_ORIGIN || 'localhost:5173',
     baseUrl: process.env.BASE_URL || 'localhost:3000',
-    NODE_ENV: process.env.NODE_ENV as 'development' | 'production' || 'development'
+    NODE_ENV: process.env.NODE_ENV as 'development' | 'production' || 'development',
+    cloundinaryName: process.env.CLOUDINARY_CLOUD_NAME || '',
+    cloudinaryApiKey: process.env.CLOUDINARY_API_KEY || '',
+    cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET || ''
 }
