@@ -39,6 +39,22 @@ class UserController {
         }
     }
 
+    updateUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { id } = req.params
+            const data = req.body
+            const updatedUser = await UserRepository.updateUser(id, data)
+            if (updatedUser) {
+                res.json(successResponse(Status.OK, 'User updated successfully', updatedUser))
+            }
+            else {
+                res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+        } catch (err) {
+            next(err)
+        }
+    }
+
     uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
             const file = req.file;
@@ -51,8 +67,19 @@ class UserController {
 
             return res.json(successResponse(Status.OK, 'Avatar uploaded successfully'))   
 
-        }   
-        catch(err){}
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    removeUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { id } = req.params
+            await UserRepository.deleteUser(id)
+            return res.json(successResponse(Status.OK, 'User deleted successfully'))
+        } catch (err) {
+            next(err)
+        }
     }
 
 }

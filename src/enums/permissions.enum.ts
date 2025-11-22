@@ -15,4 +15,13 @@ export enum Permissions {
     CHANGE_MEMBER_ROLE = 'workspace:change_member_role',
     READ_WORKSPACE_MEMBERS = 'workspace:read_members',
     MANAGE_WORKSPACE_PERMISSIONS = 'workspace:manage',
+
+    // boards
+    CREATE_BOARD = 'board:create',
+    READ_BOARD = 'board:read',
+    UPDATE_BOARD = 'board:update',
+    DELETE_BOARD = 'board:delete',
+    ADD_MEMBER_TO_BOARD = 'board:add_member',
+    REMOVE_MEMBER_FROM_BOARD = 'board:remove_member',
+    CHANGE_BOARD_PERMISSION_LEVEL = 'board:change_permission_level',
 }
