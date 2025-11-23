@@ -2,6 +2,7 @@ import { Column, Entity, JoinTable, ManyToMany, OneToMany, PrimaryGeneratedColum
 
 import { DateTimeEntity } from './base/DateTimeEntity'
 import { CardMembers } from './card-member.entity'
+import { BoardMembers } from './board-member.entity'
 import { Comment } from './comment.entity'
 import { Notification } from './notification.entity'
 import { WorkspaceMembers } from './workspace-member.entity'
@@ -35,6 +36,9 @@ export class User extends DateTimeEntity {
 
     @OneToMany(() => WorkspaceMembers, (workspaceMember) => workspaceMember.user)
     public workspaceMembers: WorkspaceMembers[]
+
+    @OneToMany(() => BoardMembers, (boardMember) => boardMember.user)
+    public boardMembers: BoardMembers[]
 
     @OneToMany(() => CardMembers, (cardMember) => cardMember.user)
     public cardMembers: CardMembers[]

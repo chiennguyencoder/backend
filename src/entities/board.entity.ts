@@ -3,6 +3,7 @@ import { Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColum
 import { DateTimeEntity } from './base/DateTimeEntity'
 import { List } from './list.entity'
 import { Workspace } from './workspace.entity'
+import { BoardMembers } from './board-member.entity'
 
 @Entity('boards')
 export class Board extends DateTimeEntity {
@@ -20,6 +21,9 @@ export class Board extends DateTimeEntity {
 
     @Column({ type: "varchar", length: 20, default: 'public' })
     public permissionLevel: 'private' | 'workspace' | 'public'
+
+    @OneToMany(() => BoardMembers, (boardMember) => boardMember.board)
+    public boardMembers: BoardMembers[]
 
     @ManyToOne(() => Workspace, (workspace) => workspace.id, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'workspaceId' })
