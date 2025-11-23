@@ -32,7 +32,6 @@ class WorkspaceController {
             if (!user) {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Authentication required'))
             }
-            // list workspace info and user with roles
             const workspace = await repo.findWithMembersById(req.params.id)
 
             if (!workspace) {
