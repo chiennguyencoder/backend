@@ -1,5 +1,5 @@
-import z from 'zod';
-import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import z from 'zod'
+import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 
 extendZodWithOpenApi(z)
 
@@ -62,7 +62,7 @@ export enum Status {
     SERVICE_UNAVAILABLE = 503,
 
     // ❌ Hết thời gian chờ phản hồi từ upstream service
-    GATEWAY_TIMEOUT = 504,
+    GATEWAY_TIMEOUT = 504
 }
 
 // export interface Link {
@@ -72,25 +72,25 @@ export enum Status {
 // }
 
 export const StatusEnumSchema = z.nativeEnum(Status).openapi({
-  description: "HTTP status code",
-  examples: [200, 400, 500],
-});
+    description: 'HTTP status code',
+    examples: [200, 400, 500]
+})
 
 export interface ApiResponse<T> {
-    status : Status,
-    message : string,
-    data? : T,
+    status: Status
+    message: string
+    data?: T
 }
 
 export interface ApiErrorResponse {
-    status : Status,
-    message : string,
-    error? : string
+    status: Status
+    message: string
+    error?: string
 }
 
-export const ApiResponseSchema = <T extends z.ZodTypeAny>(dataSchema: T) => 
+export const ApiResponseSchema = <T extends z.ZodTypeAny>(statusCode: number, dataSchema: T) =>
     z.object({
-        status : StatusEnumSchema,
+        status: z.literal(statusCode).openapi({ description: 'HTTP status code' }),
         message: z.string(),
         data: dataSchema.optional()
     })

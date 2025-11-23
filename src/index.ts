@@ -2,24 +2,33 @@ import 'reflect-metadata'
 import AppDataSource from '@/config/typeorm.config'
 import express, { urlencoded } from 'express'
 import { ErrorHandler } from './middleware/error-handle'
-import { setupSwagger } from './config/swagger.config'
 import AppRoute from './apis/index'
 import cors from 'cors'
 import passport from 'passport'
 import { Config } from './config/config'
 import session from 'express-session'
 import './config/passport.config'
-import { openAPIRouter } from "@/api-docs/openApiRouter";
-
+import { openAPIRouter } from '@/api-docs/openApiRouter'
+import cookieParser from 'cookie-parser'
+import morgan from 'morgan'
 
 // Create Express app
 
 const app = express()
 const PORT = 3000
 
-app.use(cors())
-app.use(express.json())
-app.use(urlencoded({ extended: true }))
+app.use(morgan('dev')) // Logging middleware
+
+// cors
+app.use(
+    cors({
+        origin: 'http://localhost:5173',
+        credentials: true
+    })
+)
+
+app.use(express.json()) // Parse JSON request bodies
+app.use(urlencoded({ extended: true })) // Parse URL-encoded request bodies
 
 // Session and Passport
 app.use(
@@ -34,7 +43,6 @@ app.use(
 app.use(passport.initialize())
 app.use(passport.session())
 
-
 // Connect database
 AppDataSource.initialize()
     .then(() => {
@@ -44,15 +52,17 @@ AppDataSource.initialize()
         console.error('Error during Data Source initialization:', err)
     })
 
-// Swagger
+app.use(cookieParser()) // Parse cookies
 
-app.use(openAPIRouter)
+app.use(openAPIRouter) // OpenAPI routes
 
-app.use('/api', AppRoute)
+app.use('/api', AppRoute) // API routes
+
+// 404 Handler
 app.use((req, res, next) => {
     res.status(404).json({
-        success : false,
-        msg : "NOT FOUND"
+        success: false,
+        msg: 'NOT FOUND'
     })
 })
 // Error Handler

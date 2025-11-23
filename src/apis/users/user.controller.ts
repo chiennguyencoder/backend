@@ -1,48 +1,87 @@
-import AppDataSource from '@/config/typeorm.config';
-import { NextFunction, Response, Request } from 'express';
-import { User } from '@/entities/user.entity';
-import { errorResponse, successResponse } from '@/utils/response';
-import { Status } from '@/types/response';
-
-const userRepo = AppDataSource.getRepository(User)
+import { upload } from './../../middleware/upload';
+import { NextFunction, Response, Request } from 'express'
+import { errorResponse, successResponse } from '@/utils/response'
+import { Status } from '@/types/response'
+import UserRepository from './user.repository'
+import { AuthRequest } from '@/types/auth-request';
 
 class UserController {
-    async getAll(req : Request, res : Response, next: NextFunction){
+    getAll = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const users = await userRepo.find();
+            const users = await UserRepository.findAll()
             return res.json(successResponse(Status.OK, 'Users fetched successfully', users))
-        }
-        catch(err){
+        } catch (err) {
             next(err)
         }
     }
 
-    async getUserByID(req : Request, res : Response, next: NextFunction){
-        try {   
+    getUserByID = async (req: Request, res: Response, next: NextFunction) =>    {
+        try {
             const { id } = req.params
-            const user = await userRepo.findOneBy({id})
-            if (user){
-                 res.json(successResponse(Status.OK, 'User fetched successfully', user));
+            const user = await UserRepository.findById(id)
+            if (user) {
+                res.json(successResponse(Status.OK, 'User fetched successfully', user))
+            } else {
+                res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    createUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { username, email, password } = req.body
+            await UserRepository.createUser({ username, email, password })
+            return res.json(successResponse(Status.CREATED, 'Create new user successfully!'))
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    updateUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { id } = req.params
+            const data = req.body
+            const updatedUser = await UserRepository.updateUser(id, data)
+            if (updatedUser) {
+                res.json(successResponse(Status.OK, 'User updated successfully', updatedUser))
             }
             else {
                 res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
-        }catch(err){
+        } catch (err) {
             next(err)
         }
     }
 
-    async createUser(req : Request, res : Response, next: NextFunction){
+    uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
-            const { username, email, password } = req.body
-            const user = userRepo.create({username, email, password})
-            await userRepo.save(user)
-            return res.json(successResponse(Status.CREATED, 'Create new user successfully!'))
-        }
-        catch(err){
+            const file = req.file;
+            if (!file) {
+                return res.status(Status.BAD_REQUEST).json(errorResponse(Status.BAD_REQUEST, 'No file uploaded'))
+            }
+
+            
+            await UserRepository.updateAvatar(req.user?.id as string, file.path);
+
+            return res.json(successResponse(Status.OK, 'Avatar uploaded successfully'))   
+
+        } catch (err) {
             next(err)
         }
     }
+
+    removeUser = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const { id } = req.params
+            await UserRepository.deleteUser(id)
+            return res.json(successResponse(Status.OK, 'User deleted successfully'))
+        } catch (err) {
+            next(err)
+        }
+    }
+
 }
 
 export default new UserController()
