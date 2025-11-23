@@ -7,6 +7,8 @@ import { WorkspaceMembers } from '@/entities/workspace-member.entity'
 import { errorResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import { AuthenticatedRequest, AuthRequest } from '@/types/auth-request'
+import { BoardMembers } from '@/entities/board-member.entity'
+import { Board } from '@/entities/board.entity'
 
 export const loadUserPermission = async (userId: string) => {
     try {
@@ -88,6 +90,117 @@ export const authorizePermissionWorkspace = (requiredPermission: string | string
                 return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
             }
 
+            next()
+        } catch (err) {
+            return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
+        }
+    }
+}
+
+export const authorizeRole = (requiredRoles: string | string[]) => {
+    return async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+        try {
+            const user = req.user
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+
+            const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles]
+            const hasRole = roles.every((role) => user.roles.includes(role))
+            if (!hasRole) {
+                return next(errorResponse(Status.FORBIDDEN, 'Role access denied'))
+            }
+            next()
+        } catch (err) {
+            return next(errorResponse(Status.FORBIDDEN, 'Role access denied'))
+        }
+    }
+}
+
+export const authorizeRoleWorkspace = (requiredRoles: string | string[]) => {
+    return async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const user = req.user
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+            const workspaceId = req.params.id
+            const workspaceMemberRepository = AppDataSource.getRepository(WorkspaceMembers)
+            const membership = await workspaceMemberRepository.findOne({
+                where: {
+                    workspace: { id: workspaceId },
+                    user: { id: user.id }
+                },
+                relations: ['role']
+            })
+            if (!membership) {
+                return next(errorResponse(Status.NOT_FOUND, 'Membership not found'))
+            }
+            const roles = Array.isArray(requiredRoles) ? requiredRoles : [requiredRoles]
+            const hasRole = roles.every((role) => membership.role.name === role)
+            if (!hasRole) {
+                return next(errorResponse(Status.FORBIDDEN, 'Role access denied'))
+            }
+            next()
+        } catch (err) {
+            return next(errorResponse(Status.FORBIDDEN, 'Role access denied'))
+        }
+    }
+}
+
+export const loadUserRoleAndPermission = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user
+        if (!user) {
+            return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+        }
+        const userPermissions = await loadUserPermission(user.id as string)
+        if (!userPermissions) {
+            return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
+        }
+        user.roles = userPermissions.roles
+        user.permissions = userPermissions.uniquePermissions
+        next()
+    } catch (err) {
+        return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
+    }
+}
+
+export const authorizeBoardPermission = (requiredPermission: string | string[]) => {
+    return async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const user = req.user
+            if (!user) {
+                return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+            }
+            const boardId = req.params.id
+            const boardMemberRepository = AppDataSource.getRepository(BoardMembers)
+            const membership = await boardMemberRepository.findOne({
+                where: {
+                    board: { id: boardId },
+                    user: { id: user.id }
+                }
+            })
+            if (!membership) {
+                return next(errorResponse(Status.NOT_FOUND, 'Membership not found'))
+            }
+
+            const roleRepository = AppDataSource.getRepository(Role)
+            const roleId = (membership as any).role?.id ?? membership.role
+            const role = await roleRepository.findOne({
+                where: { id: roleId },
+                relations: ['permissions']
+            })
+            if (!role) {
+                return next(errorResponse(Status.NOT_FOUND, 'Role not found'))
+            }
+
+            const permissions = role.permissions?.map(p => p.name) ?? []
+            const requiredPermissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
+            const hasPermission = requiredPermissions.every(p => permissions.includes(p))
+            if (!hasPermission) {
+                return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
+            }
             next()
         } catch (err) {
             return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
