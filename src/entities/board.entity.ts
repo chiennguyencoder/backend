@@ -16,11 +16,16 @@ export class Board extends DateTimeEntity {
     @Column({ type: 'text', nullable: true })
     public description: string
 
-    @Column({ type: 'varchar', length: 255, nullable: true })
-    public backgroundUrl: string
-
     @Column({ type: "varchar", length: 20, default: 'public' })
     public permissionLevel: 'private' | 'workspace' | 'public'
+
+    @Column({ type: 'boolean', default: false })
+    public isArchived: boolean
+
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    public backgroumdPath: string
+    @Column({ type: 'varchar', length: 255, nullable: true })
+    public backgroundPublicId: string
 
     @OneToMany(() => BoardMembers, (boardMember) => boardMember.board)
     public boardMembers: BoardMembers[]

@@ -60,7 +60,7 @@ class WorkspaceController {
                 return next(errorResponse(Status.UNAUTHORIZED, 'Authentication required'))
             }
             const createdWorkspace = await repo.createWorkspace(req.body, user.id)
-            await repo.addMemberToWorkspace(user.id, createdWorkspace.id, Roles.WORKSPACE_ADMIN)
+            await repo.addMemberToWorkspace(user.id, createdWorkspace.id, Roles.WORKSPACE_ADMIN, 'accepted')
             return res
                 .status(Status.CREATED)
                 .json(successResponse(Status.CREATED, 'Created workspace', createdWorkspace))
