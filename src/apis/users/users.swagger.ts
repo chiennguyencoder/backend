@@ -73,6 +73,7 @@ export const usersRegisterPath = () => {
         path: '/api/users/avatar',
         tags: ['Users'],
         summary: 'Upload user avatar',
+        security: [{ BearerAuth: [] }],
         request: {
             body: {
                 description: 'Avatar file to upload',
@@ -94,11 +95,11 @@ export const usersRegisterPath = () => {
         tags: ['Users'],
         summary: 'Delete user by id',
         request: {
-            params: z.object({ 
-                id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' }) 
+            params: z.object({
+                id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' })
             })
         },
         responses: createApiResponse(z.null(), 'Success')
     })
-    
+
 }

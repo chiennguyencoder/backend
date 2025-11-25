@@ -1,4 +1,3 @@
-import { upload } from './../../middleware/upload'
 import { NextFunction, Response, Request } from 'express'
 import { errorResponse, successResponse } from '@/utils/response'
 import { Status } from '@/types/response'

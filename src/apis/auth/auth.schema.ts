@@ -12,7 +12,7 @@ export type LoginInput = z.infer<typeof LoginSchema>
 export const RegisterSchema = z.object({
     username: z.string(),
     email: z.string().email('Invalid email address'),
-    password: z.string().min(6, 'Password must be at least 6 characters long')
+    password: z.string().min(6, 'Password must be at least 6 characters long').regex(/(?=^.{8,}$)((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, 'Password must contain at least one uppercase letter, one lowercase letter, and one number or special character')
 })
 export type RegisterInput = z.infer<typeof RegisterSchema>
 
