@@ -1,9 +1,9 @@
-import { upload } from './../../middleware/upload';
+import { upload } from './../../middleware/upload'
 import { NextFunction, Response, Request } from 'express'
 import { errorResponse, successResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import UserRepository from './user.repository'
-import { AuthRequest } from '@/types/auth-request';
+import { AuthRequest } from '@/types/auth-request'
 
 class UserController {
     getAll = async (req: Request, res: Response, next: NextFunction) => {
@@ -15,7 +15,7 @@ class UserController {
         }
     }
 
-    getUserByID = async (req: Request, res: Response, next: NextFunction) =>    {
+    getUserByID = async (req: Request, res: Response, next: NextFunction) => {
         try {
             const { id } = req.params
             const user = await UserRepository.findById(id)
@@ -46,8 +46,7 @@ class UserController {
             const updatedUser = await UserRepository.updateUser(id, data)
             if (updatedUser) {
                 res.json(successResponse(Status.OK, 'User updated successfully', updatedUser))
-            }
-            else {
+            } else {
                 res.status(Status.NOT_FOUND).json(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
         } catch (err) {
@@ -57,16 +56,14 @@ class UserController {
 
     uploadAvatar = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
-            const file = req.file;
+            const file = req.file
             if (!file) {
                 return res.status(Status.BAD_REQUEST).json(errorResponse(Status.BAD_REQUEST, 'No file uploaded'))
             }
 
-            
-            await UserRepository.updateAvatar(req.user?.id as string, file.path);
+            await UserRepository.updateAvatar(req.user?.id as string, file.path)
 
-            return res.json(successResponse(Status.OK, 'Avatar uploaded successfully'))   
-
+            return res.json(successResponse(Status.OK, 'Avatar uploaded successfully'))
         } catch (err) {
             next(err)
         }
@@ -81,7 +78,6 @@ class UserController {
             next(err)
         }
     }
-
 }
 
 export default new UserController()

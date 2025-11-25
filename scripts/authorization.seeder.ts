@@ -29,7 +29,16 @@ export class seedAuthorization {
             { name: 'workspace:add_member', description: 'Add a member to a workspace' },
             { name: 'workspace:remove_member', description: 'Remove a member from a workspace' },
             { name: 'workspace:change_member_role', description: "Change a member's role in a workspace" },
-            { name: 'workspace:read_members', description: 'Read workspace members' }
+            { name: 'workspace:read_members', description: 'Read workspace members' },
+
+            //board permissions
+            { name: 'board:create', description: 'Create a board' },
+            { name: 'board:read', description: 'Read board' },
+            { name: 'board:update', description: 'Update board' },
+            { name: 'board:delete', description: 'Delete board' },
+            { name: 'board:add_member', description: 'Add member to board' },
+            { name: 'board:remove_member', description: 'Remove member from board' },
+            { name: 'board:change_permission_level', description: 'Change board permission level' }
         ]
 
         // save permissions
@@ -83,6 +92,19 @@ export class seedAuthorization {
                         perm.name === 'workspace:read' ||
                         perm.name === 'workspace:update' ||
                         perm.name === 'workspace:read_members'
+                )
+            },
+            {
+                name: 'board_admin',
+                description: 'Board administrator with full access to board',
+                permissions: createdPermissions.filter((perm) => perm.name.includes('board:'))
+            },
+            {
+                name: 'board_member',
+                description: 'Board member with limited access',
+                permissions: createdPermissions.filter(
+                    (perm) =>
+                        perm.name === 'board:read' || perm.name === 'board:update' || perm.name === 'board:read_members'
                 )
             }
         ]
