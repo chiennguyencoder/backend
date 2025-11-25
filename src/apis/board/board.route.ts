@@ -1,24 +1,56 @@
-import boardController from './board.controller'
-import { Router } from 'express'
+import { boardsRegisterPath } from './board.swagger'
+import BoardController from './board.controller'
 import { BoardUpload } from '@/middleware/upload'
+import { Router } from 'express'
 import { verifyAccessToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
-import { UpdateBoardRequest } from './board.schema'
-import { boardsRegisterPath } from './board.swagger'
-const router = Router()
+import { authorizePermission, authorizePermissionWorkspace } from '@/middleware/authorization'
+import {
+    inviteByEmailSchema,
+    acceptInviteSchema,
+    joinViaShareLinkSchema,
+    createShareLinkSchema,
+    revokeShareLinkSchema,
+    UpdateBoardRequest
+} from './board.schema'
+import { Permissions } from './../../enums/permissions.enum'
 
+const route = Router()
 
 boardsRegisterPath()
-router.post('/:boardId/archive', verifyAccessToken, boardController.archiveBoard)
-router.patch('/:boardId', verifyAccessToken, validateHandle(UpdateBoardRequest), boardController.updateBoard)
-router.post('/:boardId/reopen', verifyAccessToken, boardController.reopenBoard)
-router.post(
+route.post(
+    '/:boardId/invite/email',
+    verifyAccessToken,
+    // authorizePermission(Permissions.ADD_MEMBER_TO_BOARD),
+    validateHandle(inviteByEmailSchema),
+    BoardController.inviteByEmail.bind(BoardController)
+)
+route.get('/accept-invite', verifyAccessToken, validateHandle(acceptInviteSchema), BoardController.acceptInvitation)
+route.post('/:boardId/invite/link', validateHandle(createShareLinkSchema), BoardController.createShareLink)
+route.get('/join', verifyAccessToken, validateHandle(joinViaShareLinkSchema), BoardController.joinViaShareLink)
+// route.post('/revoke-link', verifyAccessToken, validateHandle(revokeShareLinkSchema), BoardController.revokeShareLink)
+route.patch(
+    '/:boardId/members/:userId/role',
+    verifyAccessToken,
+    // authorizePermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
+    BoardController.updateMemeberRole
+)
+route.delete(
+    '/:boardId/members/:userId',
+    verifyAccessToken,
+    // authorizePermission(Permissions.REMOVE_MEMBER_FROM_BOARD),
+    BoardController.removeMember
+)
+
+route.post('/:boardId/archive', verifyAccessToken, BoardController.archiveBoard)
+route.patch('/:boardId', verifyAccessToken, validateHandle(UpdateBoardRequest), BoardController.updateBoard)
+route.post('/:boardId/reopen', verifyAccessToken, BoardController.reopenBoard)
+route.post(
     '/:boardId/background',
     verifyAccessToken,
     BoardUpload.single('background'),
-    boardController.uploadBoardBackground
+    BoardController.uploadBoardBackground
 )
 
-router.delete('/:boardId', verifyAccessToken, boardController.deleteBoardPerrmanently)
-
-export default router
+route.delete('/:boardId', verifyAccessToken, BoardController.deleteBoardPerrmanently)
+export default route

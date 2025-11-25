@@ -12,7 +12,7 @@ import { List } from '../entities/list.entity'
 import { Role } from '../entities/role.entity'
 import { Permission } from '../entities/permission.entity'
 import { Config } from './config'
-import { BoardMembers } from '@/entities/board-member.entity'
+import { BoardMembers } from '../entities/board-member.entity'
 
 config()
 
@@ -39,5 +39,5 @@ export default new DataSource({
     ],
     migrationsTableName: 'migrations',
     migrations: [],
-    synchronize: Config.NODE_ENV !== 'production',
+    synchronize: Config.NODE_ENV !== 'production'
 })

@@ -3,7 +3,7 @@ import { OpenApiGeneratorV3, OpenAPIRegistry } from '@asteasolutions/zod-to-open
 import { authRegistry } from '@/apis/auth/auth.swagger'
 import { userRegistry } from '@/apis/users/users.swagger'
 import { workspaceRegister } from '@/apis/workspace/workspace.swagger'
-import { boardRegistry } from '@/apis/boards/board.swagger'
+import { boardRegistry } from '@/apis/board/board.swagger'
 export function generateOpenAPIDocument() {
     const registry = new OpenAPIRegistry([userRegistry, authRegistry, workspaceRegister, boardRegistry])
 

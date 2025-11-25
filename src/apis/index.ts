@@ -2,7 +2,7 @@ import UserRoute from '@/apis/users/users.route'
 import AuthRoute from '@/apis/auth/auth.route'
 import WorkspaceRoute from '@/apis/workspace/workspace.route'
 import HealthCheck from '@/apis/healthcheck/index'
-import BoardRoute from '@/apis/boards/board.route'
+import BoardRoute from '@/apis/board/board.route'
 import { Router } from 'express'
 
 const route = Router()
