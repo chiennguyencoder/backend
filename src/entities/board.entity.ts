@@ -25,7 +25,7 @@ export class Board extends DateTimeEntity {
     @OneToMany(() => BoardMembers, (boardMember) => boardMember.board)
     public boardMembers: BoardMembers[]
 
-    @ManyToOne(() => Workspace, (workspace) => workspace.id, { onDelete: 'CASCADE' })
+    @ManyToOne(() => Workspace, (workspace) => workspace.boards, { onDelete: 'CASCADE' })
     @JoinColumn({ name: 'workspaceId' })
     public workspace: Workspace
 
