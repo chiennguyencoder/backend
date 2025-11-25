@@ -2,6 +2,7 @@ import { config } from 'dotenv'
 import { DataSource } from 'typeorm'
 import { User } from '../entities/user.entity'
 import { Board } from '../entities/board.entity'
+import { BoardMembers } from '../entities/board-member.entity'
 import { Workspace } from '../entities/workspace.entity'
 import { WorkspaceMembers } from '../entities/workspace-member.entity'
 import { Card } from '../entities/card.entity'
@@ -28,6 +29,7 @@ export default new DataSource({
         Workspace,
         WorkspaceMembers,
         Board,
+        BoardMembers,
         Card,
         CardMembers,
         Comment,
