@@ -38,6 +38,9 @@ export default new DataSource({
         BoardMembers
     ],
     migrationsTableName: 'migrations',
+    ssl: {
+        rejectUnauthorized: false
+    },
     migrations: [],
     synchronize: Config.NODE_ENV !== 'production'
 })

@@ -1,3 +1,4 @@
+import { AvatarUpload } from './../../middleware/upload';
 import { usersRegisterPath } from './users.swagger'
 import UserController from './user.controller'
 import { Router } from 'express'
@@ -9,7 +10,7 @@ const route = Router()
 usersRegisterPath()
 route.route('/').get(UserController.getAll).post(UserController.createUser)
 route.route('/:id').get(UserController.getUserByID).patch(validateHandle(UpdateUserRequest), UserController.updateUser)
-route.route('/avatar').post(verifyAccessToken, UserController.uploadAvatar)
+route.route('/avatar').post(verifyAccessToken, AvatarUpload.single('avatar'), UserController.uploadAvatar)
 route.route('/:id').delete(UserController.removeUser)
 
 export default route
