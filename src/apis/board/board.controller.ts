@@ -2,7 +2,7 @@ import { AuthRequest } from '@/types/auth-request'
 import { Status } from '@/types/response'
 import { errorResponse } from '@/utils/response'
 import { Request, Response, NextFunction } from 'express'
-import BoardRepository from '../boards/board.repository'
+import BoardRepository from '../board/board.repository'
 import { BoardUpload } from '@/middleware/upload'
 
 class BoardController {
