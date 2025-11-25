@@ -19,7 +19,7 @@ export class Board extends DateTimeEntity {
     @Column({ type: 'varchar', length: 255, nullable: true })
     public backgroundUrl: string
 
-    @Column({ type: "varchar", length: 20, default: 'public' })
+    @Column({ type: 'varchar', length: 20, default: 'public' })
     public permissionLevel: 'private' | 'workspace' | 'public'
 
     @OneToMany(() => BoardMembers, (boardMember) => boardMember.board)

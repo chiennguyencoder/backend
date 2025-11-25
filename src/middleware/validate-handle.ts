@@ -5,7 +5,12 @@ import { Status } from '@/types/response'
 
 export const validateHandle = (schema: ZodSchema) => (req: Request, res: Response, next: NextFunction) => {
     try {
-        const res = schema.safeParse(req.body)
+        let res
+        if (req.method === 'GET') {
+            res = schema.safeParse(req.query)
+        } else {
+            res = schema.safeParse(req.body)
+        }
         if (!res.success) {
             throw res.error
         }
