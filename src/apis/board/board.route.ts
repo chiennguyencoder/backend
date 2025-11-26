@@ -4,7 +4,7 @@ import { BoardUpload } from '@/middleware/upload'
 import { Router } from 'express'
 import { verifyAccessToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
-import { authorizePermission, authorizePermissionWorkspace } from '@/middleware/authorization'
+import { authorizeBoardPermission, authorizePermissionWorkspace } from '@/middleware/authorization'
 import {
     inviteByEmailSchema,
     acceptInviteSchema,
@@ -21,14 +21,14 @@ boardsRegisterPath()
 route.post(
     '/:boardId/invite/email',
     verifyAccessToken,
-    // authorizePermission(Permissions.ADD_MEMBER_TO_BOARD),
+    authorizeBoardPermission(Permissions.ADD_MEMBER_TO_BOARD),
     validateHandle(inviteByEmailSchema),
     BoardController.inviteByEmail.bind(BoardController)
 )
 route.get('/accept-invite', verifyAccessToken, validateHandle(acceptInviteSchema), BoardController.acceptInvitation)
 route.post('/:boardId/invite/link', validateHandle(createShareLinkSchema), BoardController.createShareLink)
 route.get('/join', verifyAccessToken, validateHandle(joinViaShareLinkSchema), BoardController.joinViaShareLink)
-// route.post('/revoke-link', verifyAccessToken, validateHandle(revokeShareLinkSchema), BoardController.revokeShareLink)
+route.post('/revoke-link', verifyAccessToken, validateHandle(revokeShareLinkSchema), BoardController.revokeShareLink)
 route.patch(
     '/:boardId/members/:userId/role',
     verifyAccessToken,

@@ -37,9 +37,10 @@ export const updateMemberRoleSchema = z.object({
     })
 })
 
-
-export const UpdateBoardRequest = z.object({
-    title: z.string().min(1).max(255).optional(),
-    description: z.string().max(1000).nullable().optional(),
-    permissionLevel: z.enum(['private', 'workspace', 'public']).optional(),
-}).strict()
+export const UpdateBoardRequest = z
+    .object({
+        title: z.string().min(1).max(255).optional(),
+        description: z.string().max(1000).nullable().optional(),
+        permissionLevel: z.enum(['private', 'workspace', 'public']).optional()
+    })
+    .strict()

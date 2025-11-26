@@ -112,8 +112,7 @@ class BoardController {
                 message: 'Board background uploaded successfully',
                 data: updatedBoard
             })
-        }
-        catch(err){
+        } catch (err) {
             next(errorResponse(Status.INTERNAL_SERVER_ERROR, 'Failed to upload board background', err))
         }
     }
@@ -124,6 +123,10 @@ class BoardController {
 
         if (!email) {
             return next(errorResponse(Status.BAD_REQUEST, 'Email is required'))
+        }
+
+        if (email === req.user!.email) {
+            return next(errorResponse(Status.BAD_REQUEST, 'Cannot invite yourself'))
         }
 
         try {

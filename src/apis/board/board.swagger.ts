@@ -196,7 +196,7 @@ export const boardsRegisterPath = () => {
         }
     })
 
-     boardRegistry.registerPath({
+    boardRegistry.registerPath({
         method: 'patch',
         path: '/api/boards/{boardId}',
         request: {
