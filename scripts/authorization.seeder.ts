@@ -38,7 +38,8 @@ export class seedAuthorization {
             { name: 'board:delete', description: 'Delete board' },
             { name: 'board:add_member', description: 'Add member to board' },
             { name: 'board:remove_member', description: 'Remove member from board' },
-            { name: 'board:change_permission_level', description: 'Change board permission level' }
+            { name: 'board:manage', description: 'Full board administrators' },
+            { name: 'board:read_members', description: 'Read board members' }
         ]
 
         // save permissions
@@ -129,7 +130,7 @@ export class seedAuthorization {
                 if (roleInfo.permissions) {
                     role.permissions = roleInfo.permissions
                     await roleRepository.save(role)
-                    console.log(' Updated permissions for role: ', roleInfo.name)
+                    console.log('Updated permissions for role: ', roleInfo.name)
                 }
             }
         }
