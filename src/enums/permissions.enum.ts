@@ -23,5 +23,8 @@ export enum Permissions {
     DELETE_BOARD = 'board:delete',
     ADD_MEMBER_TO_BOARD = 'board:add_member',
     REMOVE_MEMBER_FROM_BOARD = 'board:remove_member',
-    CHANGE_BOARD_PERMISSION_LEVEL = 'board:change_permission_level',
+    MANAGE_BOARD = 'board:manage',
+    READ_BOARD_MEMBERS = 'board:read_members',
+
+
 }
