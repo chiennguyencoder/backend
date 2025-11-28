@@ -120,7 +120,7 @@ class BoardController {
         }
     }
 
-    async inviteByEmail(req: AuthRequest, res: Response, next: NextFunction) {
+    inviteByEmail= async (req: AuthRequest, res: Response, next: NextFunction) => {
         const { email } = req.body
         const boardId = req.params.boardId
 
@@ -131,7 +131,7 @@ class BoardController {
         if (email === req.user!.email) {
             return next(errorResponse(Status.BAD_REQUEST, 'Cannot invite yourself'))
         }
-        
+
 
         try {
             const user = await userRepository.findByEmailAsync(email);
@@ -151,7 +151,7 @@ class BoardController {
         }
     }
 
-    async sendInvitationEmail(boardId: string, email: string) {
+    sendInvitationEmail = async (boardId: string, email: string) => {
         const token = crypto.randomUUID()
 
         await redisClient.setEx(`invite:${token}`, 7 * 24 * 60 * 60, JSON.stringify({ boardId, email }))
@@ -237,13 +237,13 @@ class BoardController {
         return res.status(Status.OK).json(successResponse(Status.OK, 'Share link created', { link }))
     }
 
-    async revokeShareLink(req: AuthRequest, res: Response, next: NextFunction) {
+    revokeShareLink = async (req: AuthRequest, res: Response, next: NextFunction) => {
         const { token } = req.query
         await redisClient.del(`shareLink:${token}`)
         return res.status(Status.OK).json(successResponse(Status.OK, 'Share link revoked'))
     }
 
-    async updateMemberRole(req: AuthRequest, res: Response, next: NextFunction) {
+    updateMemberRole = async (req: AuthRequest, res: Response, next: NextFunction) => {
         const { boardId, userId } = req.params
         const { roleName } = req.body
         if (!boardId || !userId || !roleName) {
@@ -311,6 +311,34 @@ class BoardController {
             return next(err)
         }
     }
+
+    leaveBoard = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const boardId = req.params.boardId
+            const userId = req.user!.id
+
+            const isMember = await BoardRepository.findMemberByUserId(boardId, userId)
+            if (!isMember) {
+                return next(errorResponse(Status.NOT_FOUND, 'You are not a member of the board'))
+            }
+
+            if (isMember.role.name === 'board_admin') {
+                const owners = await BoardRepository.countOwners(boardId)
+                if (owners <= 1) {
+                    return next(
+                        errorResponse(Status.FORBIDDEN, 'Cannot leave the board as the last owner. Transfer ownership first.')
+                    )
+                }
+            }
+
+            await BoardRepository.removeMember(boardId, userId)
+            return res.status(Status.OK).json(successResponse(Status.OK, 'Left board successfully'))
+        }
+        catch(err){
+            return next(err)
+        }
+    }
+
 }
 
 export default new BoardController()

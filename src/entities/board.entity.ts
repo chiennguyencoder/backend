@@ -4,6 +4,7 @@ import { DateTimeEntity } from './base/DateTimeEntity'
 import { List } from './list.entity'
 import { Workspace } from './workspace.entity'
 import { BoardMembers } from './board-member.entity'
+import { User } from './user.entity'
 
 @Entity('boards')
 export class Board extends DateTimeEntity {
@@ -24,6 +25,12 @@ export class Board extends DateTimeEntity {
 
     @Column({ type: 'varchar', length: 255, nullable: true })
     public backgroundPath: string
+
+    // TODO : owner relation
+    @ManyToOne(() => User, (user) => user.boards, { onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'ownerId' })
+    public owner: User
+
     @Column({ type: 'varchar', length: 255, nullable: true })
     public backgroundPublicId: string
 

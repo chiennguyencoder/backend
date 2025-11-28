@@ -27,6 +27,7 @@ export enum Permissions {
     REVOKE_LINK = 'board:revoke_share_link'
     MANAGE_BOARD = 'board:manage',
     READ_BOARD_MEMBERS = 'board:read_members',
+    UPDATE_BOARD_MEMBER_ROLE = 'board:update_member_role',
 
 
 }
