@@ -12,7 +12,9 @@ import { Config } from '@/config/config'
 import { User } from '@/entities/user.entity'
 import emailTransporter from '@/config/email.config'
 import { Board } from '@/entities/board.entity'
+import { BoardMembers } from '@/entities/board-member.entity'
 import { Role } from '@/entities/role.entity'
+import boardRepository from './board.repository'
 const roleRepo = AppDataSource.getRepository(Role)
 class BoardController {
     // PATCH /api/boards/:boardId
@@ -135,8 +137,8 @@ class BoardController {
                 return res.status(Status.FORBIDDEN).json(errorResponse(Status.FORBIDDEN, 'Already a member'))
             }
 
-            await this.sendInvitationEmail(boardId, email)
-            return res.status(Status.OK).json(successResponse(Status.OK, 'Invitation sent successfully'))
+            const token = await this.sendInvitationEmail(boardId, email)
+            return res.status(Status.OK).json(successResponse(Status.OK, 'Invitation sent successfully', { token }))
         } catch (err) {
             return next(err)
         }
@@ -147,8 +149,7 @@ class BoardController {
 
         await redisClient.setEx(`invite:${token}`, 7 * 24 * 60 * 60, JSON.stringify({ boardId, email }))
 
-        const inviteLink = `${Config.baseUrl}/api/boards/accept-invite?token=${token}`
-        console.log(inviteLink)
+        const inviteLink = `${Config.baseUrl}/api/boards/join?token=${token}`
         const mailOptions = {
             from: Config.emailUser,
             to: email,
@@ -160,12 +161,21 @@ class BoardController {
         }
 
         await emailTransporter.sendMail(mailOptions)
+        return token
     }
 
-    async acceptInvitation(req: AuthRequest, res: Response, next: NextFunction) {
+    async joinBoard(req: AuthRequest, res: Response, next: NextFunction) {
         try {
             const { token } = req.query
-            const dataStr = await redisClient.get(`invite:${token}`)
+
+            let dataStr = await redisClient.get(`invite:${token}`)
+            let type = 'invite'
+
+            if (!dataStr) {
+                dataStr = await redisClient.get(`shareLink:${token}`)
+                type = 'shareLink'
+            }
+
             if (!dataStr) {
                 return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired token'))
             }
@@ -181,7 +191,9 @@ class BoardController {
 
             await BoardRepository.addMemberToBoard(boardId, userId, 'board_member')
 
-            await redisClient.del(`invite:${token}`)
+            if (type === 'invite') {
+                await redisClient.del(`invite:${token}`)
+            }
 
             return res.status(Status.OK).json(successResponse(Status.OK, 'Successfully joined the board'))
         } catch (err) {
@@ -190,58 +202,32 @@ class BoardController {
     }
 
     async createShareLink(req: AuthRequest, res: Response, next: NextFunction) {
+        const user = req.user
+        if (!user) {
+            return next(errorResponse(Status.NOT_FOUND, 'User not found'))
+        }
         const boardId = req.params.boardId
-        const { maxUses, expireSeconds } = req.body
+        const boardMemberRepository = AppDataSource.getRepository(BoardMembers)
+        const membership = await boardMemberRepository.findOne({
+            where: {
+                board: { id: boardId },
+                user: { id: user.id }
+            }
+        })
+        if (!membership) {
+            return next(errorResponse(Status.NOT_FOUND, 'Membership not found'))
+        }
 
         const token = crypto.randomUUID()
 
         const payload = {
-            boardId,
-            maxUses: maxUses || null,
-            usedCount: 0
+            boardId
         }
 
-        await redisClient.setEx(`shareLink:${token}`, expireSeconds || 7 * 24 * 60 * 60, JSON.stringify(payload))
+        await redisClient.setEx(`shareLink:${token}`, 7 * 24 * 60 * 60, JSON.stringify(payload))
 
         const link = `${Config.baseUrl}/api/boards/join?token=${token}`
         return res.status(Status.OK).json(successResponse(Status.OK, 'Share link created', { link }))
-    }
-
-    async joinViaShareLink(req: AuthRequest, res: Response, next: NextFunction) {
-        try {
-            const { token } = req.query
-            const dataStr = await redisClient.get(`shareLink:${token}`)
-            if (!dataStr) {
-                return next(errorResponse(Status.BAD_REQUEST, 'Invalid or expired share link'))
-            }
-            const data = JSON.parse(dataStr)
-
-            if (data.maxUses && data.usedCount >= data.maxUses) {
-                return next(errorResponse(Status.BAD_REQUEST, 'Token already used maximum times'))
-            }
-
-            console.log('User ID:', req.user!.id)
-            const isMember = await BoardRepository.findMemberByUserId(data.boardId, req.user!.id)
-            if (isMember) {
-                return res.status(Status.OK).json(successResponse(Status.OK, 'Already a member of the board'))
-            }
-            console.log('User ID 2 :', req.user!.id)
-            await BoardRepository.addMemberToBoard(data.boardId, req.user!.id, 'board_member')
-
-            console.log('Added user to board:', data.boardId)
-            if (data.maxUses) {
-                data.usedCount += 1
-                await redisClient.setEx(
-                    `shareLink:${token}`,
-                    await redisClient.ttl(`shareLink:${token}`),
-                    JSON.stringify(data)
-                )
-            }
-
-            return res.status(Status.OK).json(successResponse(Status.OK, 'Successfully joined the board'))
-        } catch (err) {
-            next(err)
-        }
     }
 
     async revokeShareLink(req: AuthRequest, res: Response, next: NextFunction) {
@@ -269,6 +255,29 @@ class BoardController {
             return res.status(Status.OK).json(successResponse(Status.OK, 'Member role updated successfully'))
         } catch (err) {
             return next(err)
+        }
+    }
+
+    changeOwner = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const boardId = req.params.boardId
+            const currentOwnerId = req.user!.id
+            const newOwnerId = req.body.userId
+
+            if (!boardId || !newOwnerId) {
+                return next(errorResponse(Status.BAD_REQUEST, 'BoardId and userId are required'))
+            }
+
+            const board = await BoardRepository.getBoardById(boardId)
+            if (!board) {
+                return next(errorResponse(Status.NOT_FOUND, 'Board not found'))
+            }
+
+            await BoardRepository.changeOwner(boardId, currentOwnerId, newOwnerId)
+
+            return res.status(Status.OK).json(successResponse(Status.OK, 'Successfully changed board owner'))
+        } catch (err: any) {
+            return next(errorResponse(Status.BAD_REQUEST, err.message))
         }
     }
 

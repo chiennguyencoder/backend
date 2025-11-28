@@ -24,4 +24,5 @@ export enum Permissions {
     ADD_MEMBER_TO_BOARD = 'board:add_member',
     REMOVE_MEMBER_FROM_BOARD = 'board:remove_member',
     CHANGE_BOARD_PERMISSION_LEVEL = 'board:change_permission_level',
+    REVOKE_LINK = 'board:revoke_share_link'
 }

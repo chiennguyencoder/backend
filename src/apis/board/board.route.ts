@@ -9,11 +9,11 @@ import {
     inviteByEmailSchema,
     acceptInviteSchema,
     joinViaShareLinkSchema,
-    createShareLinkSchema,
     revokeShareLinkSchema,
     UpdateBoardRequest
 } from './board.schema'
 import { Permissions } from './../../enums/permissions.enum'
+import boardController from './board.controller'
 
 const route = Router()
 
@@ -25,20 +25,40 @@ route.post(
     validateHandle(inviteByEmailSchema),
     BoardController.inviteByEmail.bind(BoardController)
 )
-route.get('/accept-invite', verifyAccessToken, validateHandle(acceptInviteSchema), BoardController.acceptInvitation)
-route.post('/:boardId/invite/link', validateHandle(createShareLinkSchema), BoardController.createShareLink)
-route.get('/join', verifyAccessToken, validateHandle(joinViaShareLinkSchema), BoardController.joinViaShareLink)
-route.post('/revoke-link', verifyAccessToken, validateHandle(revokeShareLinkSchema), BoardController.revokeShareLink)
+route.get('/join', verifyAccessToken, validateHandle(acceptInviteSchema), BoardController.joinBoard)
+
+route.post(
+    '/:boardId/invite/link',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.ADD_MEMBER_TO_BOARD),
+    BoardController.createShareLink
+)
+
+route.delete(
+    '/revoke-link',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.REVOKE_LINK),
+    BoardController.revokeShareLink
+)
+
+route.patch(
+    '/:boardId/change-owner',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
+    boardController.changeOwner
+)
+
 route.patch(
     '/:boardId/members/:userId/role',
     verifyAccessToken,
-    // authorizePermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
+    authorizeBoardPermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
     BoardController.updateMemeberRole
 )
+
 route.delete(
     '/:boardId/members/:userId',
     verifyAccessToken,
-    // authorizePermission(Permissions.REMOVE_MEMBER_FROM_BOARD),
+    authorizeBoardPermission(Permissions.REMOVE_MEMBER_FROM_BOARD),
     BoardController.removeMember
 )
 

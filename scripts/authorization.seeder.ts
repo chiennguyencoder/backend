@@ -38,7 +38,8 @@ export class seedAuthorization {
             { name: 'board:delete', description: 'Delete board' },
             { name: 'board:add_member', description: 'Add member to board' },
             { name: 'board:remove_member', description: 'Remove member from board' },
-            { name: 'board:change_permission_level', description: 'Change board permission level' }
+            { name: 'board:change_permission_level', description: 'Change board permission level' },
+            { name: 'board:revoke_share_link', description: 'Revoke share link' }
         ]
 
         // save permissions
@@ -104,7 +105,10 @@ export class seedAuthorization {
                 description: 'Board member with limited access',
                 permissions: createdPermissions.filter(
                     (perm) =>
-                        perm.name === 'board:read' || perm.name === 'board:update' || perm.name === 'board:read_members'
+                        perm.name === 'board:read' ||
+                        perm.name === 'board:update' ||
+                        perm.name === 'board:read_members' ||
+                        perm.name === 'board:add_member'
                 )
             }
         ]

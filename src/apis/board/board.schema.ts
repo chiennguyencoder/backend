@@ -11,23 +11,12 @@ export const acceptInviteSchema = z.object({
     token: z.string()
 })
 
-export const createShareLinkSchema = z.object({
-    expiresIn: z.number().int().optional().openapi({
-        description: 'Time to expire in minutes',
-        example: 60
-    }),
-    maxUses: z.number().int().optional().openapi({
-        description: 'Max number of times the link can be used',
-        example: 5
-    })
-})
-
 export const joinViaShareLinkSchema = z.object({
-    token: z.string()
+    token: z.string().uuid()
 })
 
 export const revokeShareLinkSchema = z.object({
-    token: z.string()
+    token: z.string().uuid()
 })
 
 export const updateMemberRoleSchema = z.object({
