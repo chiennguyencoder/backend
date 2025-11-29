@@ -70,6 +70,40 @@ class BoardRepository {
         await AppDataSource.getRepository('board_members').save(boardMember)
     }
 
+    async changeOwner(boardId: string, currentOwnerId: string, newOwnerId: string) {
+        const ownerRecord = await this.boardMembersRepository.findOne({
+            where: { board: { id: boardId }, user: { id: currentOwnerId } },
+            relations: ['role', 'user', 'board']
+        })
+
+        if (!ownerRecord || ownerRecord.role.name !== 'board_admin') {
+            throw new Error('You are not the board owner')
+        }
+
+        const newOwnerRecord = await this.boardMembersRepository.findOne({
+            where: { board: { id: boardId }, user: { id: newOwnerId } },
+            relations: ['role', 'user', 'board']
+        })
+
+        if (!newOwnerRecord) {
+            throw new Error('New owner must be a member of board')
+        }
+        if(newOwnerRecord.role.name !== 'board_member'){
+            throw new Error('New owner is already board admin')
+        }
+
+        const adminRole = await this.roleRepo.findOne({ where: { name: 'board_admin' } })
+        const memberRole = await this.roleRepo.findOne({ where: { name: 'board_member' } })
+
+        ownerRecord.role = memberRole!
+        newOwnerRecord.role = adminRole!
+
+        await this.boardMembersRepository.save(ownerRecord)
+        await this.boardMembersRepository.save(newOwnerRecord)
+
+        return newOwnerRecord
+    }
+
     async updateMemberRole(boardId: string, userId: string, roleName: string): Promise<void> {
         const board = await this.repo.findOne({
             where: { id: boardId },

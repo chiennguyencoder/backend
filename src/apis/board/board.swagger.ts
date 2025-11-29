@@ -7,7 +7,6 @@ import {
     inviteByEmailSchema,
     acceptInviteSchema,
     joinViaShareLinkSchema,
-    createShareLinkSchema,
     revokeShareLinkSchema,
     updateMemberRoleSchema,
     UpdateBoardRequest
@@ -17,6 +16,7 @@ extendZodWithOpenApi(z)
 export const boardRegistry = new OpenAPIRegistry()
 
 export const boardsRegisterPath = () => {
+    // Invite user by email
     boardRegistry.registerPath({
         method: 'post',
         path: '/api/boards/{boardId}/invite/email',
@@ -29,64 +29,74 @@ export const boardsRegisterPath = () => {
             }),
             body: {
                 content: {
-                    'application/json': {
-                        schema: inviteByEmailSchema
-                    }
+                    'application/json': { schema: inviteByEmailSchema }
                 }
             }
         },
         responses: {
-            200: {
-                description: 'Invitation sent successfully',
-                content: {
-                    'application/json': {
-                        schema: z.object({
-                            status: z.number(),
-                            message: z.string()
-                        })
-                    }
-                }
-            },
-            403: {
-                description: 'Already a member'
-            }
+            ...createApiResponse(
+                z.object({ status: z.number(), message: z.string(), data: z.object({ token: z.string() }) }),
+                'Invitation sent successfully'
+            ),
+            400: { description: 'Email is required or cannot invite yourself' },
+            403: { description: 'Already a member' }
         }
     })
 
-    boardRegistry.registerPath({
-        method: 'get',
-        path: '/api/boards/accept-invite',
-        tags: ['Board'],
-        summary: 'Accept board invitation via email',
-        security: [{ bearerAuth: [] }],
-        request: {
-            query: acceptInviteSchema
-        },
-        responses: {
-            200: {
-                description: 'Joined board successfully',
-                content: {
-                    'application/json': {
-                        schema: z.object({
-                            status: z.number(),
-                            message: z.string()
-                        })
-                    }
-                }
-            },
-            400: {
-                description: 'Invalid or expired token'
-            }
-        }
-    })
-
+    // Create share link
     boardRegistry.registerPath({
         method: 'post',
         path: '/api/boards/{boardId}/invite/link',
         tags: ['Board'],
         summary: 'Create share link for board',
         security: [{ bearerAuth: [] }],
-        description: 'Create share link for board',
+        request: {
+            params: z.object({
+                boardId: z.string().uuid().openapi({ example: '322f3d3b-8cd0-4a1d-b0e2-11f3123adf44' })
+            })
+        },
+        responses: {
+            ...createApiResponse(
+                z.object({ status: z.number(), message: z.string(), data: z.object({ link: z.string() }) }),
+                'Share link created'
+            )
+        }
+    })
+
+    // Join board via token
+    boardRegistry.registerPath({
+        method: 'get',
+        path: '/api/boards/join',
+        tags: ['Board'],
+        summary: 'Join board via share link or invitation',
+        security: [{ bearerAuth: [] }],
+        request: { query: joinViaShareLinkSchema },
+        responses: {
+            200: { description: 'Successfully joined the board or already a member' },
+            400: { description: 'Invalid or expired token' }
+        }
+    })
+
+    // Revoke share link
+    boardRegistry.registerPath({
+        method: 'delete',
+        path: '/api/boards/revoke-link',
+        tags: ['Board'],
+        summary: 'Revoke share link',
+        security: [{ bearerAuth: [] }],
+        request: { query: revokeShareLinkSchema },
+        responses: {
+            200: { description: 'Share link revoked' }
+        }
+    })
+
+    // Change board owner
+    boardRegistry.registerPath({
+        method: 'patch',
+        path: '/api/boards/{boardId}/change-owner',
+        tags: ['Board'],
+        summary: 'Change board owner',
+        security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
                 boardId: z.string().uuid()
@@ -94,50 +104,19 @@ export const boardsRegisterPath = () => {
             body: {
                 content: {
                     'application/json': {
-                        schema: createShareLinkSchema
+                        schema: z.object({ userId: z.string().uuid() })
                     }
                 }
             }
         },
         responses: {
-            200: { description: 'Share link created' }
+            200: { description: 'Successfully changed board owner' },
+            400: { description: 'BoardId and userId are required' },
+            404: { description: 'Board not found' }
         }
     })
 
-    boardRegistry.registerPath({
-        method: 'get',
-        path: '/api/boards/join',
-        tags: ['Board'],
-        summary: 'Join board via share link',
-        security: [{ bearerAuth: [] }],
-        description: 'Join board via share link',
-
-        request: {
-            query: joinViaShareLinkSchema
-        },
-
-        responses: {
-            200: { description: 'Successfully joined the board' },
-            400: { description: 'Invalid or expired share link' }
-        }
-    })
-
-    // boardRegistry.registerPath({
-    //     method: 'delete',
-    //     path: '/api/boards/revoke-link',
-    //     tags: ['Board'],
-    //     security: [{ bearerAuth: [] }],
-    //     description: 'Revoke share link',
-
-    //     request: {
-    //         query: revokeShareLinkSchema
-    //     },
-
-    //     responses: {
-    //         200: { description: 'Share link revoked' }
-    //     }
-    // })
-
+    // Update member role
     boardRegistry.registerPath({
         method: 'patch',
         path: '/api/boards/{boardId}/members/{userId}/role',
@@ -149,13 +128,7 @@ export const boardsRegisterPath = () => {
                 boardId: z.string().uuid(),
                 userId: z.string().uuid()
             }),
-            body: {
-                content: {
-                    'application/json': {
-                        schema: updateMemberRoleSchema
-                    }
-                }
-            }
+            body: { content: { 'application/json': { schema: updateMemberRoleSchema } } }
         },
         responses: {
             ...createApiResponse(
@@ -167,10 +140,11 @@ export const boardsRegisterPath = () => {
                 'Member role updated successfully'
             ),
             400: { description: 'boardId, userId and roleName are required' },
-            404: { description: 'User is not a member of the board | Role not found' }
+            404: { description: 'User is not a member of the board or role not found' }
         }
     })
 
+    // Remove member
     boardRegistry.registerPath({
         method: 'delete',
         path: '/api/boards/{boardId}/members/{userId}',
@@ -185,18 +159,14 @@ export const boardsRegisterPath = () => {
         },
         responses: {
             ...createApiResponse(
-                z.object({
-                    status: z.literal(200),
-                    message: z.string(),
-                    data: z.optional(z.any())
-                }),
+                z.object({ status: z.literal(200), message: z.string(), data: z.optional(z.any()) }),
                 'Member removed successfully'
             ),
+            403: { description: 'Cannot remove last owner' },
             404: { description: 'User is not a member of the board' }
         }
     })
-
-     boardRegistry.registerPath({
+    boardRegistry.registerPath({
         method: 'patch',
         path: '/api/boards/{boardId}',
         request: {

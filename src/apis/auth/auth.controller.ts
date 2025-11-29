@@ -171,7 +171,7 @@ class AuthController {
             const user_id = req.user?.id
             const user = await useRepo.findOne({
                 where: { id: user_id },
-                relations: ['role', 'workspaceMembers.workspace', 'workspaceMembers.role'],
+                relations: ['role'],
                 select: {
                     id: true,
                     email: true,
@@ -180,34 +180,19 @@ class AuthController {
                     avatarUrl: true,
                     isActive: true,
                     createdAt: true,
-                    updatedAt: true,
-                    workspaceMembers: {
-                        id: true,
-                        workspace: {
-                            id: true,
-                            title: true,
-                            description: true
-                        },
-                        role: { name: true }
-                    }
+                    updatedAt: true
                 }
             })
 
-            const { workspaceMembers, ...userData } = user!
+            const { ...userData } = user!
 
             if (!user) {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
+
             return res.json(
                 successResponse(Status.OK, 'User fetched successfully', {
-                    ...userData,
-                    workspace: user.workspaceMembers.map((wm) => ({
-                        id: wm.workspace.id,
-                        title: wm.workspace.title,
-                        description: wm.workspace.description,
-                        role: wm.role.name,
-                        workspace_url: `/api/workspaces/${wm.workspace.id}`
-                    }))
+                    ...userData
                 })
             )
         } catch (err) {

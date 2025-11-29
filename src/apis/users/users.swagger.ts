@@ -1,6 +1,6 @@
 import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
-import { PostRegister } from '../auth/auth.schema'
+import { PostCreateUser } from './user.schema'
 import { z } from 'zod'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
 import { UpdateUserRequest } from './user.schema'
@@ -43,7 +43,7 @@ export const usersRegisterPath = () => {
         path: '/api/users',
         tags: ['Users'],
         summary: 'Register new user [only admin]',
-        request: { body: PostRegister },
+        request: { body: PostCreateUser },
         responses: createApiResponse(z.null(), 'Success')
     })
 
@@ -101,5 +101,4 @@ export const usersRegisterPath = () => {
         },
         responses: createApiResponse(z.null(), 'Success')
     })
-
 }

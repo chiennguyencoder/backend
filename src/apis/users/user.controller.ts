@@ -2,8 +2,12 @@ import { NextFunction, Response, Request } from 'express'
 import { errorResponse, successResponse } from '@/utils/response'
 import { Status } from '@/types/response'
 import UserRepository from './user.repository'
+import { Role } from '@/entities/role.entity'
+import AppDataSource from '@/config/typeorm.config'
 import { AuthRequest } from '@/types/auth-request'
+import bcrypt from 'bcrypt'
 
+const roleRepo = AppDataSource.getRepository(Role)
 class UserController {
     getAll = async (req: Request, res: Response, next: NextFunction) => {
         try {
@@ -30,8 +34,15 @@ class UserController {
 
     createUser = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const { username, email, password } = req.body
-            await UserRepository.createUser({ username, email, password })
+            const { email, password, username } = req.body
+            const isExistEmail = await UserRepository.findByEmailAsync(email)
+            if (isExistEmail) {
+                return next(errorResponse(Status.BAD_REQUEST, 'This email is already used!'))
+            }
+
+            const hashedPassword = await bcrypt.hash(password, 10)
+            const newUser = UserRepository.createUser({ email, password: hashedPassword, username })
+
             return res.json(successResponse(Status.CREATED, 'Create new user successfully!'))
         } catch (err) {
             next(err)
