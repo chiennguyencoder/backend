@@ -79,13 +79,6 @@ class AuthController {
                 secure: false
             })
 
-            // res.status(200).json(successResponse(Status.OK, 'Login successfully!', { accessToken }))
-
-            // res.cookie('refresh', refreshToken, {
-            //     maxAge: Config.cookieMaxAge,
-            //     httpOnly: true,
-            //     secure: false,
-            // })
 
             res.status(200).json(
                 successResponse(Status.OK, 'Login successfully!', {

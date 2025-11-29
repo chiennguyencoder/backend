@@ -173,36 +173,27 @@ export const authorizeBoardPermission = (requiredPermission: string | string[]) 
             if (!user) {
                 return next(errorResponse(Status.NOT_FOUND, 'User not found'))
             }
-            // console.log("UserId", user);
-            const boardId = req.params.boardId
+            const boardId = req.params.id
             const boardMemberRepository = AppDataSource.getRepository(BoardMembers)
             const membership = await boardMemberRepository.findOne({
                 where: {
                     board: { id: boardId },
                     user: { id: user.id }
                 },
-                relations: ['role']
+                relations: ['role', 'role.permissions']
             })
-            // console.log("membership: ", membership)
-
             if (!membership) {
                 return next(errorResponse(Status.NOT_FOUND, 'Membership not found'))
             }
-
-            const roleRepository = AppDataSource.getRepository(Role)
-            const roleId = (membership as any).role?.id ?? membership.role
-            const role = await roleRepository.findOne({
-                where: { id: roleId },
-                relations: ['permissions']
-            })
-
+            const role = membership.role
             if (!role) {
                 return next(errorResponse(Status.NOT_FOUND, 'Role not found'))
             }
 
             const permissions = role.permissions?.map((p) => p.name) ?? []
             const requiredPermissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission]
-            const hasPermission = requiredPermissions.every((p) => permissions.includes(p))
+
+            const hasPermission = requiredPermissions.every(p => permissions.includes(p))
             if (!hasPermission) {
                 return next(errorResponse(Status.FORBIDDEN, 'Permission denied'))
             }

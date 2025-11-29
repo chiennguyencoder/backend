@@ -18,6 +18,8 @@ import boardController from './board.controller'
 const route = Router()
 
 boardsRegisterPath()
+
+// Invate via email to board
 route.post(
     '/:boardId/invite/email',
     verifyAccessToken,
@@ -44,14 +46,14 @@ route.delete(
 route.patch(
     '/:boardId/change-owner',
     verifyAccessToken,
-    authorizeBoardPermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
+    authorizeBoardPermission(Permissions.UPDATE_BOARD_MEMBER_ROLE),
     boardController.changeOwner
 )
 
 route.patch(
     '/:boardId/members/:userId/role',
     verifyAccessToken,
-    authorizeBoardPermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
+    authorizeBoardPermission(Permissions.UPDATE_BOARD_MEMBER_ROLE),
     BoardController.updateMemberRole
 )
 
@@ -62,15 +64,53 @@ route.delete(
     BoardController.removeMember
 )
 
-route.post('/:boardId/archive', verifyAccessToken, BoardController.archiveBoard)
-route.patch('/:boardId', verifyAccessToken, validateHandle(UpdateBoardRequest), BoardController.updateBoard)
-route.post('/:boardId/reopen', verifyAccessToken, BoardController.reopenBoard)
+// Update board by id
+route.patch(
+    '/:boardId',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.UPDATE_BOARD),
+    validateHandle(UpdateBoardRequest),
+    BoardController.updateBoard
+)
+
+// Archive board by id
+route.post(
+    '/:boardId/archive',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.MANAGE_BOARD),
+    BoardController.archiveBoard
+)
+
+// Reopen board by id
+route.post(
+    '/:boardId/reopen',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.MANAGE_BOARD),
+    BoardController.reopenBoard
+)
+
+// Upload board background
 route.post(
     '/:boardId/background',
     verifyAccessToken,
+    authorizeBoardPermission(Permissions.UPDATE_BOARD),
     BoardUpload.single('background'),
     BoardController.uploadBoardBackground
 )
 
-route.delete('/:boardId', verifyAccessToken, BoardController.deleteBoardPerrmanently)
+// Delete permanently board by id
+route.delete(
+    '/:boardId',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.DELETE_BOARD),
+    BoardController.deleteBoardPerrmanently
+)
+
+// Leave board by id
+route.post(
+    '/:boardId/leave',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.READ_BOARD),
+    BoardController.leaveBoard
+)
 export default route
