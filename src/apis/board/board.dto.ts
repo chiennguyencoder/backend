@@ -12,3 +12,9 @@ export class BoardDTO {
         Object.assign(this, partial)
     }
 }
+
+export class BoardMemberDTO {
+    userId: string
+    username: string
+    role: "board_admin" | "board_member"
+}

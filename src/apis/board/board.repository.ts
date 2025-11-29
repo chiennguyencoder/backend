@@ -60,7 +60,6 @@ class BoardRepository {
         if (!user) {
             throw new Error('User not found')
         }
-        console.log('Adding user to board:', user.email, 'Board ID:', board.id, 'Role:', roleName)
         const boardMember = AppDataSource.getRepository('board_members').create({
             board: board,
             user: user,
