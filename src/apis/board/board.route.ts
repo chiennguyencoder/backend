@@ -52,7 +52,7 @@ route.patch(
     '/:boardId/members/:userId/role',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.CHANGE_BOARD_PERMISSION_LEVEL),
-    BoardController.updateMemeberRole
+    BoardController.updateMemberRole
 )
 
 route.delete(

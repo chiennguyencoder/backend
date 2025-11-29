@@ -15,6 +15,7 @@ import { Board } from '@/entities/board.entity'
 import { BoardMembers } from '@/entities/board-member.entity'
 import { Role } from '@/entities/role.entity'
 import boardRepository from './board.repository'
+import userRepository from '../users/user.repository'
 const roleRepo = AppDataSource.getRepository(Role)
 class BoardController {
     // PATCH /api/boards/:boardId
@@ -130,12 +131,18 @@ class BoardController {
         if (email === req.user!.email) {
             return next(errorResponse(Status.BAD_REQUEST, 'Cannot invite yourself'))
         }
+        
 
         try {
+            const user = await userRepository.findByEmailAsync(email);
+            if(!user){
+                return res.status(Status.FORBIDDEN).json(errorResponse(Status.FORBIDDEN, 'User not found'))
+            }
             const isMember = await BoardRepository.findMemberByEmail(boardId, email)
             if (isMember) {
                 return res.status(Status.FORBIDDEN).json(errorResponse(Status.FORBIDDEN, 'Already a member'))
             }
+
 
             const token = await this.sendInvitationEmail(boardId, email)
             return res.status(Status.OK).json(successResponse(Status.OK, 'Invitation sent successfully', { token }))
@@ -236,7 +243,7 @@ class BoardController {
         return res.status(Status.OK).json(successResponse(Status.OK, 'Share link revoked'))
     }
 
-    async updateMemeberRole(req: AuthRequest, res: Response, next: NextFunction) {
+    async updateMemberRole(req: AuthRequest, res: Response, next: NextFunction) {
         const { boardId, userId } = req.params
         const { roleName } = req.body
         if (!boardId || !userId || !roleName) {

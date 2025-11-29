@@ -88,6 +88,9 @@ class BoardRepository {
         if (!newOwnerRecord) {
             throw new Error('New owner must be a member of board')
         }
+        if(newOwnerRecord.role.name !== 'board_member'){
+            throw new Error('New owner is already board admin')
+        }
 
         const adminRole = await this.roleRepo.findOne({ where: { name: 'board_admin' } })
         const memberRole = await this.roleRepo.findOne({ where: { name: 'board_member' } })
