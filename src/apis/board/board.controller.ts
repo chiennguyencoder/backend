@@ -14,9 +14,14 @@ import emailTransporter from '@/config/email.config'
 import { Board } from '@/entities/board.entity'
 import { BoardMembers } from '@/entities/board-member.entity'
 import { Role } from '@/entities/role.entity'
-import boardRepository from './board.repository'
 import userRepository from '../users/user.repository'
+import { BoardService } from './board.service'
+import { CreateBoardDto } from './board.dto'
+import { BoardRoleNames } from '@/config/board-permissions'
+
 const roleRepo = AppDataSource.getRepository(Role)
+const boardService = new BoardService()
+
 class BoardController {
     // PATCH /api/boards/:boardId
     // update a field on board
@@ -338,7 +343,65 @@ class BoardController {
             return next(err)
         }
     }
+    getPublicBoards = async (req: Request, res: Response, next: NextFunction) => {
+        try {
+            const result = await boardService.getPublicBoards()
+            return res.status(result.status).json(successResponse(result.status, result.message, result.data))
+        } catch (err) {
+            next(err)
+        }
+    }
 
+    getAllBoards = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user!.id
+            const result = await boardService.getAllBoards(userId)
+            return res.status(result.status).json(successResponse(result.status, result.message, result.data))
+        } catch (err) {
+            next(err)
+        }
+    }
+
+    getBoardById = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const { id } = req.params
+            const userId = req.user!.id
+            const result = await boardService.getBoardById(id, userId)
+            return res.status(result.status).json(successResponse(result.status, result.message, result.data))
+        } catch (err: any) {
+            next(errorResponse(err.status || Status.INTERNAL_SERVER_ERROR, err.message))
+        }
+    }
+
+    createBoard = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const userId = req.user!.id
+            const data: CreateBoardDto = req.body
+            const result = await boardService.createBoard(data, userId)
+            return res.status(result.status).json(successResponse(result.status, result.message, result.data))
+        } catch (err: any) {
+            next(errorResponse(err.status || Status.BAD_REQUEST, err.message))
+        }
+    }
+
+    getAllMembers = async (req: AuthRequest, res: Response, next: NextFunction) => {
+        try {
+            const { id } = req.params
+            const members = await BoardRepository.getBoardMembers(id)
+            
+            const result = members.map(m => ({
+                userId: m.user.id,
+                fullName: m.user.username,
+                email: m.user.email,
+                avatar: m.user.avatarUrl,
+                role: m.role.name || 'member' 
+            }))
+
+            return res.json(successResponse(Status.OK, 'Get board members successfully', result))
+        } catch (err) {
+            next(err)
+        }
+    }
 }
 
 export default new BoardController()

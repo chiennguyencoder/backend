@@ -1,11 +1,12 @@
 import { createApiResponse } from '@/api-docs/openApiResponseBuilder'
 import { OpenAPIRegistry } from '@asteasolutions/zod-to-openapi'
-import { PostRegister } from '../auth/auth.schema'
 import { z } from 'zod'
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi'
+import { Status } from '@/types/response'
 import {
+    CreateBoardSchema,
+    BoardResponseSchema,
     inviteByEmailSchema,
-    acceptInviteSchema,
     joinViaShareLinkSchema,
     revokeShareLinkSchema,
     updateMemberRoleSchema,
@@ -166,6 +167,8 @@ export const boardsRegisterPath = () => {
             404: { description: 'User is not a member of the board' }
         }
     })
+
+    // Update Board (Patch)
     boardRegistry.registerPath({
         method: 'patch',
         path: '/api/boards/{boardId}',
@@ -183,9 +186,11 @@ export const boardsRegisterPath = () => {
             }
         },
         summary: 'Update board by id',
-        security: [{ BearerAuth: [] }],
+        security: [{ bearerAuth: [] }], // Sửa BearerAuth thành bearerAuth cho đúng chuẩn
         tags: ['Board'],
-        responses: {}
+        responses: {
+             200: { description: 'Board updated successfully' }
+        }
     })
 
     // Archive board
@@ -193,7 +198,7 @@ export const boardsRegisterPath = () => {
         method: 'post',
         path: '/api/boards/{boardId}/archive',
         summary: 'Archive board by id',
-        security: [{ BearerAuth: [] }],
+        security: [{ bearerAuth: [] }],
         tags: ['Board'],
         request: {
             params: z.object({
@@ -211,7 +216,7 @@ export const boardsRegisterPath = () => {
         method: 'post',
         path: '/api/boards/{boardId}/reopen',
         summary: 'Reopen board by id',
-        security: [{ BearerAuth: [] }],
+        security: [{ bearerAuth: [] }],
         tags: ['Board'],
         request: {
             params: z.object({
@@ -229,7 +234,7 @@ export const boardsRegisterPath = () => {
         method: 'post',
         path: '/api/boards/{boardId}/background',
         summary: 'Upload board background',
-        security: [{ BearerAuth: [] }],
+        security: [{ bearerAuth: [] }],
         tags: ['Board'],
         request: {
             params: z.object({
@@ -257,7 +262,7 @@ export const boardsRegisterPath = () => {
         method: 'delete',
         path: '/api/boards/{boardId}',
         summary: 'Delete board permanently by id',
-        security: [{ BearerAuth: [] }],
+        security: [{ bearerAuth: [] }],
         tags: ['Board'],
         request: {
             params: z.object({
@@ -269,5 +274,63 @@ export const boardsRegisterPath = () => {
             500: { description: 'Failed to delete board' }
         }
     })
+
+    // ==========================================
+    // 2. CÁC API MỚI (GET ALL, PUBLIC, CREATE)
+    // ==========================================
+
+    // Get Public Boards
+    boardRegistry.registerPath({
+        method: 'get',
+        path: '/api/boards/public',
+        tags: ['Board'],
+        summary: 'Get public boards',
+        responses: {
+            ...createApiResponse(z.array(BoardResponseSchema), 'Success', Status.OK)
+        }
+    })
+
+    // Get All Boards (User's)
+    boardRegistry.registerPath({
+        method: 'get',
+        path: '/api/boards',
+        tags: ['Board'],
+        summary: 'Get all accessible boards',
+        security: [{ bearerAuth: [] }],
+        responses: {
+            ...createApiResponse(z.array(BoardResponseSchema), 'Success', Status.OK)
+        }
+    })
+
+    // Get Board By ID
+    boardRegistry.registerPath({
+        method: 'get',
+        path: '/api/boards/{id}',
+        tags: ['Board'],
+        summary: 'Get board detail',
+        security: [{ bearerAuth: [] }],
+        request: { params: z.object({ id: z.string().uuid() }) },
+        responses: {
+            ...createApiResponse(BoardResponseSchema, 'Success', Status.OK),
+            403: { description: 'Permission denied' },
+            404: { description: 'Not found' }
+        }
+    })
+
+    // Create Board
+    boardRegistry.registerPath({
+        method: 'post',
+        path: '/api/boards',
+        tags: ['Board'],
+        summary: 'Create new board',
+        security: [{ bearerAuth: [] }],
+        request: {
+            body: {
+                content: { 'application/json': { schema: CreateBoardSchema } }
+            }
+        },
+        responses: {
+            ...createApiResponse(BoardResponseSchema, 'Created', Status.CREATED)
+        }
+    })
 }
-boardsRegisterPath()

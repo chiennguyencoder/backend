@@ -18,3 +18,17 @@ export class BoardMemberDTO {
     username: string
     role: "board_admin" | "board_member"
 }
+export class CreateBoardDto {
+    title: string;
+    description?: string;
+    backgroundUrl?: string;
+    workspaceId: string;
+    permissionLevel?: 'private' | 'public' | 'workspace';
+}
+
+export class UpdateBoardDto {
+    title?: string;
+    description?: string;
+    backgroundUrl?: string;
+    permissionLevel?: 'private' | 'public' | 'workspace';
+}

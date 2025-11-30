@@ -1,116 +1,157 @@
 import { boardsRegisterPath } from './board.swagger'
-import BoardController from './board.controller'
+import boardController from './board.controller' 
 import { BoardUpload } from '@/middleware/upload'
 import { Router } from 'express'
 import { verifyAccessToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
 import { authorizeBoardPermission, authorizePermissionWorkspace } from '@/middleware/authorization'
-import {
-    inviteByEmailSchema,
-    acceptInviteSchema,
-    joinViaShareLinkSchema,
-    revokeShareLinkSchema,
-    UpdateBoardRequest
+import { 
+    CreateBoardSchema, 
+    inviteByEmailSchema, 
+    acceptInviteSchema, 
+    UpdateBoardRequest 
 } from './board.schema'
 import { Permissions } from './../../enums/permissions.enum'
-import boardController from './board.controller'
 
 const route = Router()
 
 boardsRegisterPath()
 
-// Invate via email to board
+
+// Create Board & Get All Boards
 route.post(
-    '/:boardId/invite/email',
+    '/workspaces/:id/boards',
+    verifyAccessToken,
+    validateHandle(CreateBoardSchema),
+    boardController.createBoard
+)
+
+route.get(
+    '/workspaces/:id/boards',
+    verifyAccessToken,
+    boardController.getAllBoards
+)
+
+// Get Public Boards
+route.get(
+    '/boards/public', 
+    boardController.getPublicBoards
+)
+
+// Invite via email
+route.post(
+    '/boards/:boardId/invite/email',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.ADD_MEMBER_TO_BOARD),
     validateHandle(inviteByEmailSchema),
-    BoardController.inviteByEmail.bind(BoardController)
+    boardController.inviteByEmail.bind(boardController)
 )
-route.get('/join', verifyAccessToken, validateHandle(acceptInviteSchema), BoardController.joinBoard)
 
+// Join via link
+route.get('/boards/join', verifyAccessToken, validateHandle(acceptInviteSchema), boardController.joinBoard)
+
+// Generate Share Link
 route.post(
-    '/:boardId/invite/link',
+    '/boards/:boardId/invite/link',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.ADD_MEMBER_TO_BOARD),
-    BoardController.createShareLink
+    boardController.createShareLink
 )
 
+// Revoke Link
 route.delete(
-    '/revoke-link',
+    '/boards/revoke-link',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.REVOKE_LINK),
-    BoardController.revokeShareLink
+    boardController.revokeShareLink
 )
 
+// Change Owner
 route.patch(
-    '/:boardId/change-owner',
+    '/boards/:boardId/change-owner',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD_MEMBER_ROLE),
     boardController.changeOwner
 )
 
+// Update Member Role
 route.patch(
-    '/:boardId/members/:userId/role',
+    '/boards/:boardId/members/:userId/role',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD_MEMBER_ROLE),
-    BoardController.updateMemberRole
+    boardController.updateMemberRole
 )
 
+// Remove Member
 route.delete(
-    '/:boardId/members/:userId',
+    '/boards/:boardId/members/:userId',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.REMOVE_MEMBER_FROM_BOARD),
-    BoardController.removeMember
+    boardController.removeMember
 )
 
-// Update board by id
+// Update Board Info
 route.patch(
-    '/:boardId',
+    '/boards/:boardId',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD),
     validateHandle(UpdateBoardRequest),
-    BoardController.updateBoard
+    boardController.updateBoard
 )
 
-// Archive board by id
+// Archive
 route.post(
-    '/:boardId/archive',
+    '/boards/:boardId/archive',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.MANAGE_BOARD),
-    BoardController.archiveBoard
+    boardController.archiveBoard
 )
 
-// Reopen board by id
+// Reopen
 route.post(
-    '/:boardId/reopen',
+    '/boards/:boardId/reopen',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.MANAGE_BOARD),
-    BoardController.reopenBoard
+    boardController.reopenBoard
 )
 
-// Upload board background
+// Upload Background
 route.post(
-    '/:boardId/background',
+    '/boards/:boardId/background',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD),
     BoardUpload.single('background'),
-    BoardController.uploadBoardBackground
+    boardController.uploadBoardBackground
 )
 
-// Delete permanently board by id
+// Delete Permanently
 route.delete(
-    '/:boardId',
+    '/boards/:boardId',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.DELETE_BOARD),
-    BoardController.deleteBoardPerrmanently
+    boardController.deleteBoardPerrmanently
 )
 
-// Leave board by id
+// Leave Board
 route.post(
-    '/:boardId/leave',
+    '/boards/:boardId/leave',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.READ_BOARD),
-    BoardController.leaveBoard
+    boardController.leaveBoard
 )
+
+// Get Board Detail
+route.get(
+    '/boards/:id',
+    verifyAccessToken,
+    boardController.getBoardById
+)
+
+// Get Members
+route.get(
+    '/boards/:id/members',
+    verifyAccessToken,
+    boardController.getAllMembers
+)
+
 export default route
