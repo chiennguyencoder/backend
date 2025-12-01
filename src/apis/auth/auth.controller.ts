@@ -280,7 +280,7 @@ class AuthController {
                 text: `Your verification link is ${verifyEmail}. This link is valid for 5 minutes.`
             }
             await emailTransporter.sendMail(mailOptions)
-            return res.json(successResponse(Status.OK, 'Verification email sent successfully'))
+            // return res.json(successResponse(Status.OK, 'Verification email sent successfully'))
         } catch (err) {
             return next(err)
         }

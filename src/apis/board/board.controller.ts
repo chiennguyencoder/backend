@@ -214,6 +214,10 @@ class BoardController {
             return next(errorResponse(Status.NOT_FOUND, 'User not found'))
         }
         const boardId = req.params.boardId
+        const board = boardRepository.getBoardById(boardId)
+        if(!board){
+            return next(errorResponse(Status.NOT_FOUND, 'Board not found'))
+        }
         const boardMemberRepository = AppDataSource.getRepository(BoardMembers)
         const membership = await boardMemberRepository.findOne({
             where: {
