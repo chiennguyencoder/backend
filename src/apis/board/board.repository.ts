@@ -73,54 +73,52 @@ class BoardRepository {
         const board = await this.repo.findOne({
             where: { id: boardId },
             relations: ['owner']
-        });
+        })
 
         if (!board) {
-            throw new Error('Board not found');
+            throw new Error('Board not found')
         }
 
         if (board.owner.id !== currentOwnerId) {
-            throw new Error('You are not the board owner');
+            throw new Error('You are not the board owner')
         }
 
         if (newOwnerId === currentOwnerId) {
-            throw new Error('New owner must be different from current owner');
+            throw new Error('New owner must be different from current owner')
         }
 
         const newOwnerRecord = await this.boardMembersRepository.findOne({
             where: { board: { id: boardId }, user: { id: newOwnerId } },
-            relations: ['role','user']
-        });
+            relations: ['role', 'user']
+        })
 
         if (!newOwnerRecord) {
-            throw new Error('New owner must be a board member');
+            throw new Error('New owner must be a board member')
         }
 
-        const adminRole = await this.roleRepo.findOne({ where: { name: 'board_admin' } });
-        const memberRole = await this.roleRepo.findOne({ where: { name: 'board_member' } });
+        const adminRole = await this.roleRepo.findOne({ where: { name: 'board_admin' } })
+        const memberRole = await this.roleRepo.findOne({ where: { name: 'board_member' } })
 
         if (!adminRole || !memberRole) {
-            throw new Error('Roles not found');
+            throw new Error('Roles not found')
         }
 
         await this.boardMembersRepository.update(
             { board: { id: boardId }, user: { id: currentOwnerId } },
             { role: memberRole }
-        );
+        )
 
-        newOwnerRecord.role = adminRole;
-        await this.boardMembersRepository.save(newOwnerRecord);
+        newOwnerRecord.role = adminRole
+        await this.boardMembersRepository.save(newOwnerRecord)
 
-        board.owner = { id: newOwnerId } as User;
-        await this.repo.save(board);
+        board.owner = { id: newOwnerId } as User
+        await this.repo.save(board)
 
         return {
             message: 'Change owner successfully',
             newOwnerId
-        };
+        }
     }
-
-
 
     async updateMemberRole(boardId: string, userId: string, roleName: string): Promise<void> {
         const board = await this.repo.findOne({
