@@ -13,10 +13,12 @@ registerPath()
 
 router
     .route('/')
-    .get(verifyAccessToken, authorizePermission(Permissions.READ_WORKSPACE), WorkspaceController.getAllWorkspaces)
+    .get(verifyAccessToken, 
+        // authorizePermission(Permissions.READ_WORKSPACE), 
+        WorkspaceController.getAllWorkspaces)
     .post(
         verifyAccessToken,
-        authorizePermission(Permissions.CREATE_WORKSPACE),
+        // authorizePermission(Permissions.CREATE_WORKSPACE),
         validateHandle(WorkspaceSchema),
         WorkspaceController.createWorkspace
     )

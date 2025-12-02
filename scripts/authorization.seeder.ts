@@ -70,7 +70,7 @@ export class seedAuthorization {
             {
                 name: 'workspace_admin',
                 description: 'Workspace administrator with elevated access',
-                permissions: createdPermissions.filter((perm) => perm.name.includes('workspace:'))
+                permissions: createdPermissions.filter(perm => perm.name.includes('workspace:') || perm.name === 'board:create')
             },
             {
                 name: 'user',
@@ -95,7 +95,8 @@ export class seedAuthorization {
                     (perm) =>
                         perm.name === 'workspace:read' ||
                         perm.name === 'workspace:update' ||
-                        perm.name === 'workspace:read_members'
+                        perm.name === 'workspace:read_members' ||
+                        perm.name === 'board:create'
                 )
             },
             {

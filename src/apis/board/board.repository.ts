@@ -3,11 +3,15 @@ import AppDataSource from '@/config/typeorm.config'
 import { Role } from '@/entities/role.entity'
 import { User } from '@/entities/user.entity'
 import { BoardMembers } from '@/entities/board-member.entity'
+import { Workspace } from '@/entities/workspace.entity'
+import { WorkspaceMembers } from '@/entities/workspace-member.entity'
+import { Brackets } from 'typeorm'
 class BoardRepository {
     private repo = AppDataSource.getRepository(Board)
     private roleRepo = AppDataSource.getRepository(Role)
     private userRepo = AppDataSource.getRepository(User)
     private boardMembersRepository = AppDataSource.getRepository(BoardMembers)
+    private workspaceRepo = AppDataSource.getRepository(Workspace)
     async findAll(): Promise<Board[]> {
         return this.repo.find()
     }
@@ -32,6 +36,17 @@ class BoardRepository {
             throw new Error('Board not found')
         }
         return board.boardMembers.some((m) => m.user.email === email)
+    }
+
+    findMemberByBoardId = async (boardId: string) => {
+        const board = await this.repo.findOne({
+            where: { id: boardId },
+            relations: { boardMembers: { user: true, role: true } }
+        })
+
+        if (!board) throw new Error('Board not found')
+
+        return board.boardMembers
     }
 
     async findMemberByUserId(boardId: string, userId: string): Promise<BoardMembers | null> {
@@ -159,6 +174,97 @@ class BoardRepository {
             }
         })
     }
-}
+    async getPublicBoards() {
+        return this.repo.find({
+            where: { permissionLevel: 'public', isArchived: false },
+            select: ['id', 'title', 'description', 'backgroundPublicId', 'createdAt']
+        })
+    }
 
+    async getAllBoardsForUser(userId: string) {
+        return this.repo.find({
+            where: [
+                { permissionLevel: 'public', isArchived: false },
+                { isArchived: false, boardMembers: { user: { id: userId } } },
+                {
+                    permissionLevel: 'workspace',
+                    isArchived: false,
+                    workspace: { workspaceMembers: { user: { id: userId } } }
+                }
+            ],
+            relations: ['workspace'],
+            select: {
+                id: true,
+                title: true,
+                description: true,
+                permissionLevel: true,
+                backgroundPath: true,
+                createdAt: true,
+                updatedAt: true,
+                workspace: { id: true, title: true }
+            },
+            order: { createdAt: 'DESC' }
+        })
+    }
+    async getBoardDetail(boardId: string, userId: string) {
+        const board = await this.repo.findOne({
+            where: { id: boardId, isArchived: false },
+            relations: ['workspace', 'owner']
+        })
+
+        if (!board) return null
+
+        let hasAccess = false
+
+        if (board.permissionLevel === 'public') hasAccess = true
+        else if (board.permissionLevel === 'workspace') {
+            const isWsMember = await AppDataSource.getRepository(WorkspaceMembers).exists({
+                where: { workspace: { id: board.workspace.id }, user: { id: userId } }
+            })
+            if (isWsMember) hasAccess = true
+        }
+
+        if (!hasAccess) {
+            const isBoardMember = await AppDataSource.getRepository(BoardMembers).exists({
+                where: { board: { id: board.id }, user: { id: userId } }
+            })
+            if (isBoardMember) hasAccess = true
+        }
+
+        if (!hasAccess) throw new Error('Permission denied')
+
+        return board
+    }
+
+    async createBoard(data: Partial<Board>, workspaceId: string, userId: string) {
+        return await AppDataSource.transaction(async (manager) => {
+            const workspace = await manager.findOne(Workspace, { where: { id: workspaceId } })
+            if (!workspace) throw new Error('Workspace not found')
+
+            const adminRole = await manager.findOne(Role, { where: { name: 'board_admin' } })
+            if (!adminRole) throw new Error('Role board_admin not found')
+
+            const newBoard = manager.create(Board, {
+                ...data,
+                workspace: workspace,
+                owner: { id: userId }
+            })
+            const savedBoard = await manager.save(newBoard)
+
+            const member = manager.create(BoardMembers, {
+                board: savedBoard,
+                user: { id: userId },
+                role: adminRole
+            })
+            await manager.save(member)
+
+            return {
+                ...savedBoard,
+                workspaceId: workspace.id,
+                ownerId: userId,
+                permissionLevel: savedBoard.permissionLevel
+            }
+        })
+    }
+}
 export default new BoardRepository()

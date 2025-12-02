@@ -14,4 +14,5 @@ route.use('/workspaces', WorkspaceRoute)
 route.use('/roles', RoleRoute)
 route.use('/health', HealthCheck)
 route.use('/boards', BoardRoute)
+route.use('/', BoardRoute)
 export default route
