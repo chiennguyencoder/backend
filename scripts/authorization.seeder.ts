@@ -39,9 +39,10 @@ export class seedAuthorization {
             { name: 'board:add_member', description: 'Add member to board' },
             { name: 'board:remove_member', description: 'Remove member from board' },
             { name: 'board:change_permission_level', description: 'Change board permission level' },
-            { name: 'board:revoke_share_link', description: 'Revoke share link' }
+            { name: 'board:revoke_share_link', description: 'Revoke share link' },
             { name: 'board:manage', description: 'Full board administrators' },
-            { name: 'board:read_members', description: 'Read board members' }
+            { name: 'board:read_members', description: 'Read board members' },
+            { name: 'board:update_member_role', description: 'Update member role' }
         ]
 
         // save permissions

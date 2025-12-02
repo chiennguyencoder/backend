@@ -70,37 +70,54 @@ class BoardRepository {
     }
 
     async changeOwner(boardId: string, currentOwnerId: string, newOwnerId: string) {
-        const ownerRecord = await this.boardMembersRepository.findOne({
-            where: { board: { id: boardId }, user: { id: currentOwnerId } },
-            relations: ['role', 'user', 'board']
+        const board = await this.repo.findOne({
+            where: { id: boardId },
+            relations: ['owner']
         })
 
-        if (!ownerRecord || ownerRecord.role.name !== 'board_admin') {
+        if (!board) {
+            throw new Error('Board not found')
+        }
+
+        if (board.owner.id !== currentOwnerId) {
             throw new Error('You are not the board owner')
+        }
+
+        if (newOwnerId === currentOwnerId) {
+            throw new Error('New owner must be different from current owner')
         }
 
         const newOwnerRecord = await this.boardMembersRepository.findOne({
             where: { board: { id: boardId }, user: { id: newOwnerId } },
-            relations: ['role', 'user', 'board']
+            relations: ['role', 'user']
         })
 
         if (!newOwnerRecord) {
-            throw new Error('New owner must be a member of board')
-        }
-        if(newOwnerRecord.role.name !== 'board_member'){
-            throw new Error('New owner is already board admin')
+            throw new Error('New owner must be a board member')
         }
 
         const adminRole = await this.roleRepo.findOne({ where: { name: 'board_admin' } })
         const memberRole = await this.roleRepo.findOne({ where: { name: 'board_member' } })
 
-        ownerRecord.role = memberRole!
-        newOwnerRecord.role = adminRole!
+        if (!adminRole || !memberRole) {
+            throw new Error('Roles not found')
+        }
 
-        await this.boardMembersRepository.save(ownerRecord)
+        await this.boardMembersRepository.update(
+            { board: { id: boardId }, user: { id: currentOwnerId } },
+            { role: memberRole }
+        )
+
+        newOwnerRecord.role = adminRole
         await this.boardMembersRepository.save(newOwnerRecord)
 
-        return newOwnerRecord
+        board.owner = { id: newOwnerId } as User
+        await this.repo.save(board)
+
+        return {
+            message: 'Change owner successfully',
+            newOwnerId
+        }
     }
 
     async updateMemberRole(boardId: string, userId: string, roleName: string): Promise<void> {
