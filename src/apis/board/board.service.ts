@@ -40,14 +40,13 @@ export class BoardService {
 
     async createBoard(data: CreateBoardDto, userId: string) {
         try {
+            const { workspaceId, ...boardData } = data;
             const board = await BoardRepository.createBoard(
                 {
-                    title: data.title,
-                    description: data.description,
-                    permissionLevel: data.permissionLevel,
+                    ...boardData,
                     backgroundPath: data.backgroundUrl
                 },
-                data.workspaceId,
+                workspaceId,
                 userId
             )
             return {

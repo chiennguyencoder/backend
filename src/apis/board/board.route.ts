@@ -1,74 +1,80 @@
 import { boardsRegisterPath } from './board.swagger'
-import boardController from './board.controller' 
+import boardController from './board.controller'
 import { BoardUpload } from '@/middleware/upload'
 import { Router } from 'express'
 import { verifyAccessToken } from '@/utils/jwt'
 import { validateHandle } from '@/middleware/validate-handle'
 import { authorizeBoardPermission, authorizePermissionWorkspace } from '@/middleware/authorization'
-import { 
-    CreateBoardSchema, 
-    inviteByEmailSchema, 
-    acceptInviteSchema, 
-    UpdateBoardRequest 
-} from './board.schema'
 import { Permissions } from './../../enums/permissions.enum'
+import {
+    CreateBoardSchema,
+    inviteByEmailSchema,
+    acceptInviteSchema,
+    joinViaShareLinkSchema,
+    revokeShareLinkSchema,
+    UpdateBoardRequest
+} from './board.schema'
 
 const route = Router()
 
 boardsRegisterPath()
 
 
+// Get Public Boards
+route.get(
+    '/public', 
+    boardController.getPublicBoards
+)
+
+route.get(
+    '/join', 
+    verifyAccessToken, 
+    validateHandle(acceptInviteSchema), 
+    boardController.joinBoard
+)
+
+route.delete(
+    '/revoke-link',
+    verifyAccessToken,
+    authorizeBoardPermission(Permissions.REVOKE_LINK),
+    boardController.revokeShareLink
+)
+
 // Create Board & Get All Boards
 route.post(
-    '/workspaces/:id/boards',
+    '/',
     verifyAccessToken,
+    authorizePermissionWorkspace(Permissions.UPDATE_WORKSPACE), 
     validateHandle(CreateBoardSchema),
     boardController.createBoard
 )
 
 route.get(
-    '/workspaces/:id/boards',
+    '/',
     verifyAccessToken,
     boardController.getAllBoards
 )
 
-// Get Public Boards
-route.get(
-    '/boards/public', 
-    boardController.getPublicBoards
-)
-
 // Invite via email
 route.post(
-    '/boards/:boardId/invite/email',
+    '/:boardId/invite/email',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.ADD_MEMBER_TO_BOARD),
     validateHandle(inviteByEmailSchema),
     boardController.inviteByEmail.bind(boardController)
 )
 
-// Join via link
-route.get('/boards/join', verifyAccessToken, validateHandle(acceptInviteSchema), boardController.joinBoard)
-
 // Generate Share Link
 route.post(
-    '/boards/:boardId/invite/link',
+    '/:boardId/invite/link',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.ADD_MEMBER_TO_BOARD),
     boardController.createShareLink
 )
 
-// Revoke Link
-route.delete(
-    '/boards/revoke-link',
-    verifyAccessToken,
-    authorizeBoardPermission(Permissions.REVOKE_LINK),
-    boardController.revokeShareLink
-)
-
 // Change Owner
 route.patch(
-    '/boards/:boardId/change-owner',
+    '/:boardId/change-owner',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD_MEMBER_ROLE),
     boardController.changeOwner
@@ -76,7 +82,7 @@ route.patch(
 
 // Update Member Role
 route.patch(
-    '/boards/:boardId/members/:userId/role',
+    '/:boardId/members/:userId/role',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD_MEMBER_ROLE),
     boardController.updateMemberRole
@@ -84,7 +90,7 @@ route.patch(
 
 // Remove Member
 route.delete(
-    '/boards/:boardId/members/:userId',
+    '/:boardId/members/:userId',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.REMOVE_MEMBER_FROM_BOARD),
     boardController.removeMember
@@ -92,7 +98,7 @@ route.delete(
 
 // Update Board Info
 route.patch(
-    '/boards/:boardId',
+    '/:boardId',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD),
     validateHandle(UpdateBoardRequest),
@@ -101,7 +107,7 @@ route.patch(
 
 // Archive
 route.post(
-    '/boards/:boardId/archive',
+    '/:boardId/archive',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.MANAGE_BOARD),
     boardController.archiveBoard
@@ -109,7 +115,7 @@ route.post(
 
 // Reopen
 route.post(
-    '/boards/:boardId/reopen',
+    '/:boardId/reopen',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.MANAGE_BOARD),
     boardController.reopenBoard
@@ -117,7 +123,7 @@ route.post(
 
 // Upload Background
 route.post(
-    '/boards/:boardId/background',
+    '/:boardId/background',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.UPDATE_BOARD),
     BoardUpload.single('background'),
@@ -126,7 +132,7 @@ route.post(
 
 // Delete Permanently
 route.delete(
-    '/boards/:boardId',
+    '/:boardId',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.DELETE_BOARD),
     boardController.deleteBoardPerrmanently
@@ -134,7 +140,7 @@ route.delete(
 
 // Leave Board
 route.post(
-    '/boards/:boardId/leave',
+    '/:boardId/leave',
     verifyAccessToken,
     authorizeBoardPermission(Permissions.READ_BOARD),
     boardController.leaveBoard
@@ -142,14 +148,14 @@ route.post(
 
 // Get Board Detail
 route.get(
-    '/boards/:id',
+    '/:id',
     verifyAccessToken,
     boardController.getBoardById
 )
 
 // Get Members
 route.get(
-    '/boards/:id/members',
+    '/:id/members',
     verifyAccessToken,
     boardController.getAllMembers
 )

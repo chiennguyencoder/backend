@@ -18,7 +18,8 @@ import userRepository from '../users/user.repository'
 import { BoardService } from './board.service'
 import { CreateBoardDto } from './board.dto'
 import { BoardRoleNames } from '@/config/board-permissions'
-
+import { WorkspaceMembers } from '@/entities/workspace-member.entity'
+import { Permissions } from '@/enums/permissions.enum'
 const roleRepo = AppDataSource.getRepository(Role)
 const boardService = new BoardService()
 
@@ -354,18 +355,25 @@ class BoardController {
 
     getAllBoards = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
-            const userId = req.user!.id
+            if (!req.user || !req.user.id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'User information not found'))
+            }
+            const userId = req.user.id
+            
             const result = await boardService.getAllBoards(userId)
             return res.status(result.status).json(successResponse(result.status, result.message, result.data))
         } catch (err) {
             next(err)
         }
     }
-
     getBoardById = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
+            if (!req.user || !req.user.id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'User information not found'))
+            }
+            const userId = req.user.id
+
             const { id } = req.params
-            const userId = req.user!.id
             const result = await boardService.getBoardById(id, userId)
             return res.status(result.status).json(successResponse(result.status, result.message, result.data))
         } catch (err: any) {
@@ -375,8 +383,25 @@ class BoardController {
 
     createBoard = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
-            const userId = req.user!.id
+            if (!req.user || !req.user.id) {
+                return next(errorResponse(Status.UNAUTHORIZED, 'User information not found'))
+            }
+            const userId = req.user.id
             const data: CreateBoardDto = req.body
+            const workspaceMemberRepo = AppDataSource.getRepository(WorkspaceMembers)
+            const member = await workspaceMemberRepo.findOne({
+                where: { workspace: { id: data.workspaceId }, user: { id: userId } },
+                relations: ['role', 'role.permissions']
+            })
+
+            if (!member) {
+                 return next(errorResponse(Status.FORBIDDEN, 'You are not a member of this workspace'))
+            }
+
+            const hasPermission = member.role.permissions.some(p => p.name === Permissions.CREATE_BOARD)
+            if (!hasPermission) {
+                 return next(errorResponse(Status.FORBIDDEN, 'You do not have permission to create board in this workspace'))
+            }
             const result = await boardService.createBoard(data, userId)
             return res.status(result.status).json(successResponse(result.status, result.message, result.data))
         } catch (err: any) {

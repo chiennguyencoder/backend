@@ -3,12 +3,14 @@ import AppDataSource from '@/config/typeorm.config'
 import { Role } from '@/entities/role.entity'
 import { User } from '@/entities/user.entity'
 import { BoardMembers } from '@/entities/board-member.entity'
+import { Workspace } from '@/entities/workspace.entity'
 import { Brackets } from 'typeorm'
 class BoardRepository {
     private repo = AppDataSource.getRepository(Board)
     private roleRepo = AppDataSource.getRepository(Role)
     private userRepo = AppDataSource.getRepository(User)
     private boardMembersRepository = AppDataSource.getRepository(BoardMembers)
+    private workspaceRepo = AppDataSource.getRepository(Workspace)
     async findAll(): Promise<Board[]> {
         return this.repo.find()
     }
@@ -151,63 +153,55 @@ class BoardRepository {
     }
 
     async getAllBoardsForUser(userId: string) {
-        return this.repo.createQueryBuilder('board')
-            .leftJoinAndSelect('board.workspace', 'workspace')
-            .leftJoin('workspace.workspaceMembers', 'wsMember', 'wsMember.userId = :userId', { userId })
-            .leftJoin('board.boardMembers', 'boardMember', 'boardMember.userId = :userId', { userId })
-            .where('board.isArchived = :isArchived', { isArchived: false })
-            .andWhere(new Brackets(qb => {
-                qb.where('board.permissionLevel = :public', { public: 'public' })
-                  .orWhere('board.permissionLevel = :wsLevel AND wsMember.id IS NOT NULL', { wsLevel: 'workspace' })
-                  .orWhere('boardMember.id IS NOT NULL')
-            }))
-            .select([
-                'board.id', 'board.title', 'board.description', 'board.permissionLevel', 
-                'board.backgroundPath', 'board.createdAt', 'board.updatedAt',
-                'workspace.id', 'workspace.title'
-            ])
-            .orderBy('board.createdAt', 'DESC')
-            .getMany()
+        return this.repo.find({
+            where: [
+                { permissionLevel: 'public', isArchived: false },
+                { isArchived: false, boardMembers: { user: { id: userId } } },
+                { 
+                    permissionLevel: 'workspace', 
+                    isArchived: false, 
+                    workspace: { workspaceMembers: { user: { id: userId } } }
+                }
+            ],
+            relations: ['workspace'],
+            select: {
+                id: true, title: true, description: true, permissionLevel: true,
+                backgroundPath: true, createdAt: true, updatedAt: true,
+                workspace: { id: true, title: true }
+            },
+            order: { createdAt: 'DESC' }
+        })
     }
-
     async getBoardDetail(boardId: string, userId: string) {
-        const board = await this.repo.createQueryBuilder('board')
-            .leftJoinAndSelect('board.workspace', 'workspace')
-            .leftJoin('workspace.workspaceMembers', 'wsMember', 'wsMember.userId = :userId', { userId })
-            .leftJoinAndSelect('board.lists', 'lists')
-            .leftJoinAndSelect('lists.cards', 'cards')
-            .leftJoinAndSelect('board.boardMembers', 'members')
-            .leftJoin('members.user', 'user')
-            .addSelect(['user.id'])
-            .where('board.id = :boardId', { boardId })
-            .andWhere('board.isArchived = :isArchived', { isArchived: false })
-            .getOne()
-
+        const board = await this.repo.findOne({
+            where: { id: boardId, isArchived: false },
+            relations: ['workspace', 'lists', 'lists.cards', 'boardMembers', 'boardMembers.user']
+        })
         if (!board) return null
-
         let hasAccess = false
         if (board.permissionLevel === 'public') hasAccess = true
         else if (board.permissionLevel === 'workspace') {
-            const isWsMember = await AppDataSource.getRepository('workspace_members').exists({ 
+            const isWsMember = await AppDataSource.getRepository(WorkspaceMembers).exists({ 
                 where: { workspace: { id: board.workspace.id }, user: { id: userId } } 
             })
             if (isWsMember) hasAccess = true
         }
-        
         if (!hasAccess) {
             const isBoardMember = board.boardMembers.some(m => m.user.id === userId)
             if (isBoardMember) hasAccess = true
         }
 
         if (!hasAccess) throw new Error('Permission denied')
-        
         return board
     }
 
     async createBoard(data: Partial<Board>, workspaceId: string, userId: string) {
         return await AppDataSource.transaction(async (manager) => {
-            const workspace = await manager.findOne('workspaces', { where: { id: workspaceId } })
+            const workspace = await manager.findOne(Workspace, { where: { id: workspaceId } })
             if (!workspace) throw new Error('Workspace not found')
+
+            const adminRole = await manager.findOne(Role, { where: { name: 'board_admin' } })
+            if (!adminRole) throw new Error('Role board_admin not found')
 
             const newBoard = manager.create(Board, {
                 ...data,
@@ -216,9 +210,6 @@ class BoardRepository {
             })
             const savedBoard = await manager.save(newBoard)
 
-            const adminRole = await manager.findOne(Role, { where: { name: 'board_admin' } })
-            if (!adminRole) throw new Error('Role board_admin not found')
-
             const member = manager.create(BoardMembers, {
                 board: savedBoard,
                 user: { id: userId },
@@ -226,7 +217,12 @@ class BoardRepository {
             })
             await manager.save(member)
 
-            return savedBoard
+            return {
+                ...savedBoard,
+                workspaceId: workspace.id,
+                ownerId: userId,
+                permissionLevel: savedBoard.permissionLevel
+            }
         })
     }
 }

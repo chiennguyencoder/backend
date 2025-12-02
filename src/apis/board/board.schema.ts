@@ -7,6 +7,7 @@ export const CreateBoardSchema = z.object({
     title: z.string().min(1).max(255),
     description: z.string().optional(),
     backgroundUrl: z.string().optional(),
+    workspaceId: z.string().uuid('Workspace ID is required'),
     permissionLevel: z.enum(['private', 'workspace', 'public']).default('workspace')
 }).openapi({
     example: {
