@@ -40,7 +40,7 @@ export class BoardService {
 
     async createBoard(data: CreateBoardDto, userId: string) {
         try {
-            const { workspaceId, ...boardData } = data;
+            const { workspaceId, ...boardData } = data
             const board = await BoardRepository.createBoard(
                 {
                     ...boardData,
@@ -49,10 +49,20 @@ export class BoardService {
                 workspaceId,
                 userId
             )
+
+            const formatted = {
+                id: board.id,
+                title: board.title,
+                description: board.description,
+                permissionLevel: board.permissionLevel,
+                workspaceId: board.workspaceId,
+                createdAt: board.createdAt,
+                updatedAt: board.updatedAt
+            }
             return {
                 status: Status.CREATED,
                 message: 'Board created successfully',
-                data: board
+                data: formatted
             }
         } catch (error: any) {
             throw { status: Status.BAD_REQUEST, message: error.message }

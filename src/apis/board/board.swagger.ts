@@ -10,7 +10,8 @@ import {
     joinViaShareLinkSchema,
     revokeShareLinkSchema,
     updateMemberRoleSchema,
-    UpdateBoardRequest
+    UpdateBoardRequest,
+    BoardMemberResponseSchema
 } from './board.schema'
 extendZodWithOpenApi(z)
 
@@ -189,7 +190,7 @@ export const boardsRegisterPath = () => {
         security: [{ bearerAuth: [] }], // Sửa BearerAuth thành bearerAuth cho đúng chuẩn
         tags: ['Board'],
         responses: {
-             200: { description: 'Board updated successfully' }
+            200: { description: 'Board updated successfully' }
         }
     })
 
@@ -275,10 +276,6 @@ export const boardsRegisterPath = () => {
         }
     })
 
-    // ==========================================
-    // 2. CÁC API MỚI (GET ALL, PUBLIC, CREATE)
-    // ==========================================
-
     // Get Public Boards
     boardRegistry.registerPath({
         method: 'get',
@@ -290,7 +287,7 @@ export const boardsRegisterPath = () => {
         }
     })
 
-    // Get All Boards (User's)
+    // Get All Boards
     boardRegistry.registerPath({
         method: 'get',
         path: '/api/boards',
@@ -331,6 +328,25 @@ export const boardsRegisterPath = () => {
         },
         responses: {
             ...createApiResponse(BoardResponseSchema, 'Created', Status.CREATED)
+        }
+    })
+
+    //Get member
+    boardRegistry.registerPath({
+        method: 'get',
+        path: '/api/boards/{id}/members',
+        tags: ['Board'],
+        summary: 'Get all members of a board',
+        security: [{ bearerAuth: [] }],
+        request: {
+            params: z.object({
+                id: z.string().uuid()
+            })
+        },
+        responses: {
+            ...createApiResponse(BoardMemberResponseSchema, 'Get board members successfully', Status.OK),
+            403: { description: 'Permission denied' },
+            404: { description: 'Board not found' }
         }
     })
 }

@@ -19,19 +19,10 @@ const route = Router()
 
 boardsRegisterPath()
 
-
 // Get Public Boards
-route.get(
-    '/public', 
-    boardController.getPublicBoards
-)
+route.get('/public', boardController.getPublicBoards)
 
-route.get(
-    '/join', 
-    verifyAccessToken, 
-    validateHandle(acceptInviteSchema), 
-    boardController.joinBoard
-)
+route.get('/join', verifyAccessToken, validateHandle(acceptInviteSchema), boardController.joinBoard)
 
 route.delete(
     '/revoke-link',
@@ -44,16 +35,12 @@ route.delete(
 route.post(
     '/',
     verifyAccessToken,
-    authorizePermissionWorkspace(Permissions.UPDATE_WORKSPACE), 
+    authorizePermissionWorkspace(Permissions.UPDATE_WORKSPACE),
     validateHandle(CreateBoardSchema),
     boardController.createBoard
 )
 
-route.get(
-    '/',
-    verifyAccessToken,
-    boardController.getAllBoards
-)
+route.get('/', verifyAccessToken, boardController.getAllBoards)
 
 // Invite via email
 route.post(
@@ -147,16 +134,13 @@ route.post(
 )
 
 // Get Board Detail
-route.get(
-    '/:id',
-    verifyAccessToken,
-    boardController.getBoardById
-)
+route.get('/:id', verifyAccessToken, authorizeBoardPermission(Permissions.READ_BOARD), boardController.getBoardById)
 
 // Get Members
 route.get(
     '/:id/members',
     verifyAccessToken,
+    authorizeBoardPermission(Permissions.READ_BOARD),
     boardController.getAllMembers
 )
 

@@ -3,20 +3,23 @@ import { ZodRequestBody, extendZodWithOpenApi } from '@asteasolutions/zod-to-ope
 
 extendZodWithOpenApi(z)
 
-export const CreateBoardSchema = z.object({
-    title: z.string().min(1).max(255),
-    description: z.string().optional(),
-    backgroundUrl: z.string().optional(),
-    workspaceId: z.string().uuid('Workspace ID is required'),
-    permissionLevel: z.enum(['private', 'workspace', 'public']).default('workspace')
-}).openapi({
-    example: {
-        title: 'New Project',
-        description: 'Project description',
-        permissionLevel: 'workspace',
-        backgroundUrl: 'https://example.com/bg.jpg'
-    }
-})
+export const CreateBoardSchema = z
+    .object({
+        title: z.string().min(1).max(255),
+        description: z.string().optional(),
+        backgroundUrl: z.string().optional(),
+        workspaceId: z.string().uuid('Workspace ID is required'),
+        permissionLevel: z.enum(['private', 'workspace', 'public']).default('workspace')
+    })
+    .openapi({
+        example: {
+            title: 'New Project',
+            description: 'Project description',
+            permissionLevel: 'workspace',
+            workspaceId: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17',
+            backgroundUrl: 'https://example.com/bg.jpg'
+        }
+    })
 
 export const inviteByEmailSchema = z.object({
     email: z.string().email('Invalid email address').optional()

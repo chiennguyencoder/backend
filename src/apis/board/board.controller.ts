@@ -17,7 +17,6 @@ import { Role } from '@/entities/role.entity'
 import userRepository from '../users/user.repository'
 import { BoardService } from './board.service'
 import { CreateBoardDto } from './board.dto'
-import { BoardRoleNames } from '@/config/board-permissions'
 import { WorkspaceMembers } from '@/entities/workspace-member.entity'
 import { Permissions } from '@/enums/permissions.enum'
 const roleRepo = AppDataSource.getRepository(Role)
@@ -218,7 +217,7 @@ class BoardController {
             return next(errorResponse(Status.NOT_FOUND, 'User not found'))
         }
         const boardId = req.params.boardId
-        const board = boardRepository.getBoardById(boardId)
+        const board = BoardRepository.getBoardById(boardId)
         if (!board) {
             return next(errorResponse(Status.NOT_FOUND, 'Board not found'))
         }
@@ -363,7 +362,7 @@ class BoardController {
                 return next(errorResponse(Status.UNAUTHORIZED, 'User information not found'))
             }
             const userId = req.user.id
-            
+
             const result = await boardService.getAllBoards(userId)
             return res.status(result.status).json(successResponse(result.status, result.message, result.data))
         } catch (err) {
@@ -399,12 +398,14 @@ class BoardController {
             })
 
             if (!member) {
-                 return next(errorResponse(Status.FORBIDDEN, 'You are not a member of this workspace'))
+                return next(errorResponse(Status.FORBIDDEN, 'You are not a member of this workspace'))
             }
 
-            const hasPermission = member.role.permissions.some(p => p.name === Permissions.CREATE_BOARD)
+            const hasPermission = member.role.permissions.some((p) => p.name === Permissions.CREATE_BOARD)
             if (!hasPermission) {
-                 return next(errorResponse(Status.FORBIDDEN, 'You do not have permission to create board in this workspace'))
+                return next(
+                    errorResponse(Status.FORBIDDEN, 'You do not have permission to create board in this workspace')
+                )
             }
             const result = await boardService.createBoard(data, userId)
             return res.status(result.status).json(successResponse(result.status, result.message, result.data))
@@ -416,14 +417,14 @@ class BoardController {
     getAllMembers = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {
             const { id } = req.params
-            const members = await BoardRepository.getBoardMembers(id)
-            
-            const result = members.map(m => ({
+            const members = await BoardRepository.findMemberByBoardId(id)
+
+            const result = members.map((m) => ({
                 userId: m.user.id,
                 fullName: m.user.username,
                 email: m.user.email,
                 avatar: m.user.avatarUrl,
-                role: m.role.name || 'member' 
+                role: m.role.name || 'member'
             }))
 
             return res.json(successResponse(Status.OK, 'Get board members successfully', result))
