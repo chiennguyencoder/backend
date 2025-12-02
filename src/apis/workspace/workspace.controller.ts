@@ -7,6 +7,7 @@ import { AuthRequest } from '@/types/auth-request'
 import { Roles } from '@/enums/roles.enum'
 import { User } from '@/entities/user.entity'
 import UserRepository from '../users/user.repository'
+import { workerData } from 'worker_threads'
 
 const repo = new WorkspaceRepository()
 
@@ -90,6 +91,7 @@ class WorkspaceController {
             next(err)
         }
     }
+
 
     archiveWorkspace = async (req: AuthRequest, res: Response, next: NextFunction) => {
         try {

@@ -126,7 +126,7 @@ class BoardController {
         }
     }
 
-    inviteByEmail= async (req: AuthRequest, res: Response, next: NextFunction) => {
+    inviteByEmail = async (req: AuthRequest, res: Response, next: NextFunction) => {
         const { email } = req.body
         const boardId = req.params.boardId
 
@@ -138,17 +138,15 @@ class BoardController {
             return next(errorResponse(Status.BAD_REQUEST, 'Cannot invite yourself'))
         }
 
-
         try {
-            const user = await userRepository.findByEmailAsync(email);
-            if(!user){
+            const user = await userRepository.findByEmailAsync(email)
+            if (!user) {
                 return res.status(Status.FORBIDDEN).json(errorResponse(Status.FORBIDDEN, 'User not found'))
             }
             const isMember = await BoardRepository.findMemberByEmail(boardId, email)
             if (isMember) {
                 return res.status(Status.FORBIDDEN).json(errorResponse(Status.FORBIDDEN, 'Already a member'))
             }
-
 
             const token = await this.sendInvitationEmail(boardId, email)
             return res.status(Status.OK).json(successResponse(Status.OK, 'Invitation sent successfully', { token }))
@@ -220,6 +218,10 @@ class BoardController {
             return next(errorResponse(Status.NOT_FOUND, 'User not found'))
         }
         const boardId = req.params.boardId
+        const board = boardRepository.getBoardById(boardId)
+        if (!board) {
+            return next(errorResponse(Status.NOT_FOUND, 'Board not found'))
+        }
         const boardMemberRepository = AppDataSource.getRepository(BoardMembers)
         const membership = await boardMemberRepository.findOne({
             where: {
@@ -332,15 +334,17 @@ class BoardController {
                 const owners = await BoardRepository.countOwners(boardId)
                 if (owners <= 1) {
                     return next(
-                        errorResponse(Status.FORBIDDEN, 'Cannot leave the board as the last owner. Transfer ownership first.')
+                        errorResponse(
+                            Status.FORBIDDEN,
+                            'Cannot leave the board as the last owner. Transfer ownership first.'
+                        )
                     )
                 }
             }
 
             await BoardRepository.removeMember(boardId, userId)
             return res.status(Status.OK).json(successResponse(Status.OK, 'Left board successfully'))
-        }
-        catch(err){
+        } catch (err) {
             return next(err)
         }
     }

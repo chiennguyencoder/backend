@@ -14,6 +14,7 @@ export const usersRegisterPath = () => {
         path: '/api/users',
         tags: ['Users'],
         summary: 'Get all users',
+        security: [{ bearerAuth: [] }],
         responses: {
             200: {
                 description: 'Get all users'
@@ -26,6 +27,7 @@ export const usersRegisterPath = () => {
         path: '/api/users/{id}',
         tags: ['Users'],
         summary: 'Get user by id',
+        security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
                 id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' })
@@ -42,6 +44,7 @@ export const usersRegisterPath = () => {
         method: 'post',
         path: '/api/users',
         tags: ['Users'],
+        security: [{ bearerAuth: [] }],
         summary: 'Register new user [only admin]',
         request: { body: PostCreateUser },
         responses: createApiResponse(z.null(), 'Success')
@@ -52,6 +55,7 @@ export const usersRegisterPath = () => {
         path: '/api/users/{id}',
         tags: ['Users'],
         summary: 'Update user by id',
+        security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
                 id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' })
@@ -74,6 +78,7 @@ export const usersRegisterPath = () => {
         tags: ['Users'],
         summary: 'Upload user avatar',
         security: [{ BearerAuth: [] }],
+        security: [{ bearerAuth: [] }],
         request: {
             body: {
                 description: 'Avatar file to upload',
@@ -94,6 +99,7 @@ export const usersRegisterPath = () => {
         path: '/api/users/{id}',
         tags: ['Users'],
         summary: 'Delete user by id',
+        security: [{ bearerAuth: [] }],
         request: {
             params: z.object({
                 id: z.string().openapi({ example: 'cc7a10e2-df5e-4974-8a5c-df541cdc2a17' })
